@@ -38,7 +38,7 @@ class Azurite : JavaPlugin() {
         pm.registerSuspendingEvents(GenericRulesListener(this), this)
         pm.registerSuspendingEvents(StorageItemListener(this), this)
         pm.registerEvents(CombatLogListener(), this)
-        pm.registerSuspendingEvents(SummonListener(), this)
+        pm.registerEvents(SummonListener(), this)
         pm.registerEvents(DPSListener(), this)
         pm.registerEvents(TrashListener(), this)
     }
