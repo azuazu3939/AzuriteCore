@@ -71,5 +71,7 @@ tasks {
         archiveClassifier.set("")
         relocate("com.zaxxer.hikari", "com.github.azuazu3939.lib.com.zaxxer.hikari")
         relocate("org.mariadb.jdbc", "com.github.azuazu3939.lib.org.mariadb.jdbc")
+        relocate("com.github.shynixn", "com.github.azuazu3939.lib.com.github.shynixn")
+        relocate("org.jetbrains", "com.github.azuazu3939.lib.org.jetbrains")
     }
 }
