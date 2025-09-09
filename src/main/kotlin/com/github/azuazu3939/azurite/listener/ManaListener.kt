@@ -110,7 +110,7 @@ class ManaListener(private val plugin: Azurite) : Listener {
 
     private fun getProgress(player: Player): Double {
         val mana = Mana(player)
-        return mana.getMana() / mana.getMaxMana()
+        return (mana.getMana() / mana.getMaxMana()).coerceAtMost(1.0).coerceAtLeast(0.0)
     }
 
     private fun createBossBar(player: Player) {
