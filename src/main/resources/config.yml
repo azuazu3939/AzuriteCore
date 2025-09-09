@@ -1,0 +1,13 @@
+Colors:
+  RED: "§c§l"
+  BLUE: "§9§l"
+  GREEN: "§a§l"
+  YELLOW: "§e§l"
+
+Database:
+  scheme: jdbc:mariadb
+  host: localhost
+  port: 3306
+  database: database
+  username: username
+  password: password

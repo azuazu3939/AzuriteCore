@@ -1,0 +1,89 @@
+name: Azurite
+version: @version@
+main: com.github.azuazu3939.azurite.Azurite
+api-version: '1.21'
+authors: [ MCLove32 ]
+
+depend:
+  - MythicMobs
+
+commands:
+  worldset:
+    permission: azurite.command.worldset
+    aliases:
+      - wset
+  mode:
+    permission: azurite.command.mode
+    aliases:
+      - md
+  setmana:
+    permission: azurite.command.setmana
+    aliases:
+      - addmana
+      - addMana
+      - setMana
+  setmaxmana:
+    permission: azurite.command.setmaxmana
+    aliases:
+      - setmm
+  combatlog:
+    permission: azurite.command.combatlog
+    aliases:
+      - damagelog
+  hopper:
+    permission: azurite.command.hopper
+  dps:
+    permission: azurite.command.dps
+  fix:
+    permission: azurite.command.fix
+  camera:
+    permission: azurite.command.camera
+  trash:
+    permission: azurite.command.trash
+    aliases:
+      - gomi
+
+permissions:
+  azurite.*:
+    default: false
+    children:
+      azurite.reload.mythicmobs: true
+      azurite.command.*: true
+  azurite.command.*:
+    default: false
+    children:
+      azurite.command.setmaxmana: true
+      azurite.command.setmana: true
+      azurite.command.mode: true
+      azurite.command.worldset: true
+      azurite.command.combatlog: true
+      azurite.command.hopper: true
+      azurite.command.dps: true
+      azurite.command.fix: true
+      azurite.command.azurite: true
+      azurite.command.camera: true
+      azurite.command.trash: true
+  azurite.reload.mythicmobs:
+    default: op
+  azurite.command.setmaxmana:
+    default: op
+  azurite.command.setmana:
+    default: op
+  azurite.command.mode:
+    default: op
+  azurite.command.worldset:
+    default: op
+  azurite.command.combatlog:
+    default: true
+  azurite.command.hopper:
+    default: op
+  azurite.command.dps:
+    default: op
+  azurite.command.fix:
+    default: op
+  azurite.command.camera:
+    default: true
+  azurite.command.trash:
+    default: true
+  gitupdater.command:
+    default: op
