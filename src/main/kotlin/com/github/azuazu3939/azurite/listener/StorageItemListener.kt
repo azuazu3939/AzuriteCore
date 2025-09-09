@@ -1,8 +1,10 @@
 package com.github.azuazu3939.azurite.listener
 
 import com.github.azuazu3939.azurite.Azurite
+import com.github.azuazu3939.azurite.util.PluginDispatchers.runTask
 import com.github.azuazu3939.azurite.util.Util
 import com.google.common.collect.HashMultimap
+import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -21,7 +23,8 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import java.util.*
 
-class StorageItemListener : Listener {
+@Suppress("RedundantSuspendModifier")
+class StorageItemListener(private val plugin: Azurite) : Listener {
 
     @EventHandler
     fun onSwap(e: PlayerSwapHandItemsEvent) {
@@ -39,7 +42,6 @@ class StorageItemListener : Listener {
     @EventHandler
     fun onJoin(e: PlayerJoinEvent) {
         val player = e.player
-        player.inventory.contents
         Azurite.runLater(runnable = {
             player.inventory.filter {
                 it != null && it.itemMeta?.persistentDataContainer?.has(NamespacedKey.minecraft("no_drop")) == true
@@ -47,7 +49,7 @@ class StorageItemListener : Listener {
                 player.inventory.removeItem(it)
             }
             player.inventory.setItem(8, getBoxItemStack())
-        }, 40)
+        },30)
     }
 
     private fun getBoxItemStack(): ItemStack {
@@ -71,7 +73,7 @@ class StorageItemListener : Listener {
     }
 
     @EventHandler
-    fun onInteract(e: PlayerInteractEvent) {
+    suspend fun onInteract(e: PlayerInteractEvent) {
         if (e.item?.itemMeta?.persistentDataContainer?.has(NamespacedKey.minecraft("no_drop")) == true && e.action.isRightClick) {
             e.isCancelled = true
             openWindow(e.player)
@@ -92,23 +94,27 @@ class StorageItemListener : Listener {
         e.player.inventory.setItem(8, getBoxItemStack())
     }
 
-    private fun openWindow(e: Player) {
+    private suspend fun openWindow(e: Player) {
         if (Util.isCooldown(javaClass, e.uniqueId, multimap)) return
         Util.setCooldown(javaClass, e.uniqueId, multimap, 30)
 
-        e.playSound(e, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
-        Azurite.runLater(runnable = {
-            e.playSound(e, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
-        }, 5)
-        Azurite.runLater(runnable = {
-            if (e.inventory.heldItemSlot == 8) {
-                e.closeInventory()
-                e.playSound(e, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 0.5f)
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "pa open menu " + e.name)
-            } else {
-                e.playSound(e, Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 0.5f)
+        plugin.runTask {
+            async {
+                e.playSound(e, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
+                delay(5L * 50)
+                e.playSound(e, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
+                delay(5L * 50)
             }
-        }, 10)
+            sync {
+                if (e.inventory.heldItemSlot == 8) {
+                    e.closeInventory()
+                    e.playSound(e, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 0.5f)
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "pa open menu " + e.name)
+                } else {
+                    e.playSound(e, Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 0.5f)
+                }
+            }
+        }
     }
      companion object {
          private val multimap = HashMultimap.create<Class<*>, UUID>()

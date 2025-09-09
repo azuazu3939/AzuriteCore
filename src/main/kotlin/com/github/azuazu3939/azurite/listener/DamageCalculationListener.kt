@@ -9,6 +9,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.potion.PotionEffectType
 import kotlin.math.pow
+import kotlin.math.roundToInt
 
 class DamageCalculationListener : Listener {
 
@@ -47,7 +48,7 @@ class DamageCalculationListener : Listener {
             f*= getValue(fTOUGHNESS)
         }
 
-        return 1.0.coerceAtLeast(Math.round(f / 20.0) * 1.0)
+        return 1.0.coerceAtLeast((f / 20.0).roundToInt() * 1.0)
     }
 
     private fun math(lim: Double, value: Double): Double {

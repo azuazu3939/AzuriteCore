@@ -8,10 +8,10 @@ import org.bukkit.entity.Player
 
 class TrashCommand : CommandExecutor {
 
-    override fun onCommand(p0: CommandSender, p1: Command, p2: String, p3: Array<out String>): Boolean {
-        if (p0 !is Player) return false
-        p0.closeInventory()
-        p0.openInventory(TrashInventory().getInventory())
+    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        if (sender !is Player) return false
+        sender.closeInventory()
+        sender.openInventory(TrashInventory().getInventory())
         return true
     }
 }

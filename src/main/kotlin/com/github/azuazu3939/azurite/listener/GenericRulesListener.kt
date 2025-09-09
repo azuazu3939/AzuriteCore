@@ -4,6 +4,7 @@ import com.github.azuazu3939.azurite.Azurite
 import com.github.azuazu3939.azurite.command.ModeCommand
 import com.github.azuazu3939.azurite.database.DBCon
 import com.github.azuazu3939.azurite.mythic.MythicTrigger
+import com.github.azuazu3939.azurite.util.PluginDispatchers.runTask
 import com.github.azuazu3939.azurite.util.Util
 import io.lumine.mythic.api.adapters.AbstractEntity
 import io.lumine.mythic.bukkit.BukkitAdapter
@@ -26,7 +27,8 @@ import org.bukkit.event.inventory.CraftItemEvent
 import org.bukkit.event.player.*
 import org.bukkit.persistence.PersistentDataType
 
-class GenericRulesListener : Listener {
+@Suppress("RedundantSuspendModifier")
+class GenericRulesListener(private val plugin: Azurite) : Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun onCraft(event: CraftItemEvent) {
@@ -61,57 +63,57 @@ class GenericRulesListener : Listener {
         if (p !is Player) return
         val i = event.item.itemStack
         val meta = i.itemMeta
-        if (i.hasItemMeta()) {
+        if (!i.hasItemMeta()) return
 
-            if (meta.persistentDataContainer.has(NamespacedKey("az", "player_dropped"), PersistentDataType.STRING)) {
-                val u = meta.persistentDataContainer.get(NamespacedKey("az", "player_dropped"), PersistentDataType.STRING)
-                u?.let {
-                    if (p.uniqueId.toString() != it) {
-                        event.isCancelled = true
-                        return
-                    }
+        if (meta.persistentDataContainer.has(NamespacedKey("az", "player_dropped"), PersistentDataType.STRING)) {
+            val u = meta.persistentDataContainer.get(NamespacedKey("az", "player_dropped"), PersistentDataType.STRING)
+            u?.let {
+                if (p.uniqueId.toString() != it) {
+                    event.isCancelled = true
+                    return
                 }
             }
-
-            meta.persistentDataContainer.remove(NamespacedKey("az", "player_dropped"))
-            i.setItemMeta(meta)
-            event.item.itemStack = i
         }
+        meta.persistentDataContainer.remove(NamespacedKey("az", "player_dropped"))
+        i.setItemMeta(meta)
+        event.item.itemStack = i
+
     }
 
     @EventHandler
-    fun onJoin(event: PlayerJoinEvent) {
+    suspend fun onJoin(event: PlayerJoinEvent) {
         val player = event.player
-        Util.removeAttribute(player, Attribute.STEP_HEIGHT, NamespacedKey("az", "default-step-height"))
-        Azurite.runLater(
-            runnable = {
+        plugin.runTask {
+            delayTick(30)
+            sync {
+                Util.removeAttribute(player, Attribute.STEP_HEIGHT, NamespacedKey("az", "default-step-height"))
                 setStep(player)
                 setWayPoint(player)
-                       },
-            50L)
-        Azurite.runLater(
-            runnable = {
                 player.updateInventory()
-                       },
-            50L)
-
-        if (player.hasPermission("azurite.command.mode")) {
-            ModeCommand.switch(player, egod = false, efly = true, ebypass = false)
-        }
-
-        if (!DBCon.hasSpawn(player.uniqueId)) {
-            DBCon.loadSpawn(player.uniqueId)
-            Azurite.runAsyncLater(runnable = {
+            }
+            if (player.hasPermission("azurite.command.mode")) {
+                ModeCommand.switch(player, egod = false, efly = true, ebypass = false)
+            }
+            async {
+                if (!DBCon.hasSpawn(player.uniqueId)) {
+                    DBCon.loadSpawn(player.uniqueId)
+                }
+            }
+            delayTick(5)
+            val has =  async {
                 if (!DBCon.hasSpawn(player.uniqueId)) {
                     DBCon.setSpawn(player.uniqueId)
-                    Azurite.run(runnable = {
-                        Bukkit.dispatchCommand(
-                            Bukkit.getConsoleSender(),
-                            "kits start " + player.name
-                        )
-                    })
+                    true
+                } else {
+                    false
                 }
-            }, 5L)
+            }
+            if (has) {
+                Bukkit.dispatchCommand(
+                    Bukkit.getConsoleSender(),
+                    "kits start " + player.name
+                )
+            }
         }
     }
 

@@ -17,6 +17,8 @@ repositories {
     maven("https://repo.onarandombox.com/content/groups/public/")
     maven("https://maven.enginehub.org/repo/")
     maven("https://repo.azisaba.net/repository/maven-public/")
+    maven("https://jitpack.io")
+
 }
 
 dependencies {
@@ -30,6 +32,10 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.zaxxer:HikariCP:6.0.0")
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("com.github.shynixn.mccoroutine:mccoroutine-bukkit-api:2.22.0")
+    implementation("com.github.shynixn.mccoroutine:mccoroutine-bukkit-core:2.22.0")
+
     paperweight.paperDevBundle("1.21.8-R0.1-SNAPSHOT")
 }
 

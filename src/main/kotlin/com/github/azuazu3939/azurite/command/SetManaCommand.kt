@@ -9,17 +9,17 @@ import org.bukkit.command.CommandSender
 
 class SetManaCommand : CommandExecutor {
 
-    override fun onCommand(p0: CommandSender, p1: Command, p2: String, p3: Array<out String>): Boolean {
-        if (p3.size != 2) {
-            return sendMessage(p0, "§c/setmana <MCID> <mana>")
+    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        if (args.size != 2) {
+            return sendMessage(sender, "§c/setmana <MCID> <mana>")
         }
 
-        val player = Bukkit.getPlayer(p3[0]) ?: return sendMessage(p0, "§cプレイヤーが見つかりません。")
+        val player = Bukkit.getPlayer(args[0]) ?: return sendMessage(sender, "§cプレイヤーが見つかりません。")
         val mana: Double
         try {
-            mana = p3[1].toDouble()
+            mana = args[1].toDouble()
         } catch (e: NumberFormatException) {
-            return sendMessage(p0, "§cマナが無効です。")
+            return sendMessage(sender, "§cマナが無効です。")
         }
 
         Mana(player).setMana(mana)

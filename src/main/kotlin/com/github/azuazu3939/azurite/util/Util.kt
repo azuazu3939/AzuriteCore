@@ -70,7 +70,6 @@ object Util {
         }
     }
 
-
     private fun getItemDataContainerString(itemStack: ItemStack?, key: NamespacedKey): String? {
         if (itemStack != null && itemStack.hasItemMeta()) {
             return itemStack.itemMeta.persistentDataContainer.get(key, PersistentDataType.STRING)

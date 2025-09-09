@@ -9,9 +9,9 @@ import org.bukkit.entity.Player
 
 class CameraCommand : CommandExecutor {
 
-    override fun onCommand(p0: CommandSender, p1: Command, p2: String, p3: Array<out String>): Boolean {
-        if (p0 !is Player) return false
-        val attr = p0.getAttribute(Attribute.CAMERA_DISTANCE) ?: return false
+    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        if (sender !is Player) return false
+        val attr = sender.getAttribute(Attribute.CAMERA_DISTANCE) ?: return false
         val v = attr.baseValue
         if (v <= 2) {
             attr.baseValue = 4.0
@@ -22,7 +22,7 @@ class CameraCommand : CommandExecutor {
         } else if (v <= 8) {
             attr.baseValue = 2.0
         }
-        p0.sendMessage(Component.text("§fカメラディスタンスを 「${attr.baseValue}」に設定しました。"))
+        sender.sendMessage(Component.text("§fカメラディスタンスを 「${attr.baseValue}」に設定しました。"))
         return true
     }
 }

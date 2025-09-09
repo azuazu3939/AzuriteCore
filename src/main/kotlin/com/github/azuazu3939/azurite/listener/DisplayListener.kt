@@ -1,6 +1,7 @@
 package com.github.azuazu3939.azurite.listener
 
 import com.github.azuazu3939.azurite.Azurite
+import com.github.azuazu3939.azurite.util.PluginDispatchers.runTask
 import io.lumine.mythic.api.adapters.AbstractEntity
 import io.lumine.mythic.bukkit.MythicBukkit
 import io.lumine.mythic.bukkit.events.MythicDamageEvent
@@ -25,11 +26,12 @@ import org.bukkit.plugin.java.JavaPlugin
 import java.text.NumberFormat
 import java.util.*
 
-class DisplayListener : Listener {
+@Suppress("RedundantSuspendModifier")
+class DisplayListener(private val plugin : Azurite) : Listener {
 
     @Suppress("DEPRECATION")
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    fun onDisplay(event: MythicDamageEvent) {
+    suspend fun onDisplay(event: MythicDamageEvent) {
         val attacker = event.caster.entity
         val victim = event.target
 
@@ -41,19 +43,23 @@ class DisplayListener : Listener {
         }
     }
 
-    private fun displayText(player: Player, victim: AbstractEntity, mob: ActiveMob, element: String?, damage: Double) {
-        val multi = mob.type.damageModifiers.getOrDefault(element, 1.0)
-        val amount = formatDamage(damage * multi)
-        val loc = getNoise(victim.bukkitEntity.location)
-        val comp = Component.text(getElement(element) + amount)
+    private suspend fun displayText(player: Player, victim: AbstractEntity, mob: ActiveMob, element: String?, damage: Double) {
+        plugin.runTask {
+            async {
+                val multi = mob.type.damageModifiers.getOrDefault(element, 1.0)
+                val amount = formatDamage(damage * multi)
+                val loc = getNoise(victim.bukkitEntity.location)
+                val comp = Component.text(getElement(element) + amount)
+                val id = Random().nextInt(Int.MAX_VALUE)
 
-        sendDisplayText(player, loc, comp, Random().nextInt(Int.MAX_VALUE))
-    }
+                spawnDisplay(player, loc.x, loc.y, loc.z, id)
+                displayMeta(player, id, comp)
 
-    private fun sendDisplayText(player: Player, location: Location, component: Component, id: Int) {
-        spawnDisplay(player, location.x, location.y, location.z, id)
-        displayMeta(player, id, component)
-        Azurite.runAsyncLater(runnable = { removeDisplay(player, id) }, 30)
+                delayTick(30)
+
+                removeDisplay(player, id)
+            }
+        }
     }
 
     private fun formatDamage(amount: Double): String {
@@ -70,11 +76,10 @@ class DisplayListener : Listener {
             rand.nextInt(5) * 0.5 - 1)
     }
 
-
-    private fun getColors(): Map<String, String?> {
+    private fun getColors(): Map<String, String> {
         val yml = JavaPlugin.getPlugin(Azurite::class.java).config
         if (yml.getConfigurationSection("Colors") == null) return mapOf()
-        return yml.getConfigurationSection("Colors")!!.getKeys(false).associateWith { yml.getString("Colors.$it") }
+        return yml.getConfigurationSection("Colors")!!.getKeys(false).associateWith { yml.getString("Colors.$it")!! }
     }
 
     private fun getElement(element: String?): String {
@@ -82,7 +87,7 @@ class DisplayListener : Listener {
         return getColors()
             .entries.stream()
             .filter { element == it.key }.map { it.value }.findFirst().map {
-                it?.let { it1 ->
+                it.let { it1 ->
                     DAMAGE_PREFIX.replace("§7§l", it1)
                 }
             }.orElse(DAMAGE_PREFIX)

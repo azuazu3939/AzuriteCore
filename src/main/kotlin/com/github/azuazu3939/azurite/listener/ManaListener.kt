@@ -1,11 +1,11 @@
 package com.github.azuazu3939.azurite.listener
 
-import com.github.azuazu3939.azurite.*
+import com.github.azuazu3939.azurite.Azurite
 import com.github.azuazu3939.azurite.event.ManaModifiedEvent
 import com.github.azuazu3939.azurite.event.ManaModifyEvent
 import com.github.azuazu3939.azurite.mana.Mana
 import com.github.azuazu3939.azurite.mana.ManaRegen
-import org.bukkit.Bukkit
+import com.github.azuazu3939.azurite.util.PluginDispatchers.runTask
 import org.bukkit.Bukkit.createBossBar
 import org.bukkit.NamespacedKey
 import org.bukkit.boss.BarColor
@@ -21,7 +21,8 @@ import java.text.NumberFormat
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-class ManaListener : Listener {
+@Suppress("RedundantSuspendModifier")
+class ManaListener(private val plugin: Azurite) : Listener {
 
     @EventHandler
     fun onJoin(event: PlayerJoinEvent) {
@@ -55,7 +56,7 @@ class ManaListener : Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    fun onManaModify(event: ManaModifyEvent) {
+    suspend fun onManaModify(event: ManaModifyEvent) {
         val player = event.getPlayer()
         val uuid = player.uniqueId
         if (event.getAdd() - event.getBefore() < 0) {
@@ -65,21 +66,28 @@ class ManaListener : Listener {
 
         if (lastUsedManaMap.containsKey(uuid)) return
         lastUsedManaMap[uuid] = 0
+        cancelManaRegenSet.add(uuid)
         lastUsedManaCheck(player, uuid)
     }
 
-    private fun lastUsedManaCheck(player: Player, uuid: UUID) {
-        val t = Azurite.runAsyncLater(runnable = {
-            if (!lastUsedManaMap.containsKey(uuid)) return@runAsyncLater
-            if (!player.isOnline) {
-                removeLastUsedMana(uuid)
-                return@runAsyncLater
+    private suspend fun lastUsedManaCheck(player: Player, uuid: UUID) {
+        plugin.runTask {
+            val b = async {
+                if (!lastUsedManaMap.containsKey(uuid) || !cancelManaRegenSet.contains(uuid)) {
+                    false
+                } else if (!player.isOnline) {
+                    removeLastUsedMana(uuid)
+                    false
+                } else {
+                    lastUsedManaMap.merge(uuid, 1, Int::plus)
+                    lastUsedManaRegen(player, uuid)
+                    true
+                }
             }
-            lastUsedManaMap.merge(uuid, 1, Int::plus)
-            lastUsedManaRegen(player, uuid)
-            lastUsedManaCheck(player, uuid)
-        }, 10L).taskId
-        cancelManaRegenMap[uuid] = t
+            if (b) {
+                lastUsedManaCheck(player, uuid)
+            }
+        }
     }
 
     private fun lastUsedManaRegen(player: Player, uuid: UUID) {
@@ -168,16 +176,13 @@ class ManaListener : Listener {
         private val bossBarMap = ConcurrentHashMap<UUID, KeyedBossBar>()
         private val visibleCountMap = ConcurrentHashMap<UUID, Int>()
         private val lastUsedManaMap = ConcurrentHashMap<UUID, Int>()
-        private val cancelManaRegenMap = mutableMapOf<UUID, Int>()
+        private val cancelManaRegenSet = ConcurrentHashMap.newKeySet<UUID>()
         private const val MAX_VISIBLE_THRESHOLD = 5
         private const val INITIAL_DELAY = 20L
 
         fun removeLastUsedMana(uuid: UUID) {
             lastUsedManaMap.remove(uuid)
-            if (cancelManaRegenMap.containsKey(uuid)) {
-                cancelManaRegenMap[uuid]?.let { Bukkit.getScheduler().cancelTask(it) }
-                cancelManaRegenMap.remove(uuid)
-            }
+            cancelManaRegenSet.remove(uuid)
         }
 
         fun removeBossBar(uuid: UUID) {

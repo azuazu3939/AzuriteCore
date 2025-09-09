@@ -8,16 +8,16 @@ import org.bukkit.entity.Player
 
 class ModeCommand : TabExecutor {
 
-    override fun onCommand(p0: CommandSender, p1: Command, p2: String, p3: Array<out String>): Boolean {
-        if (p0 !is Player) return false
-        if (p3.isEmpty()) {
-            switch(p0)
-        } else if ("on".equals(p3[0], true)) {
-            switch(p0, true)
-        } else if ("off".equals(p3[0], true)) {
-            switch(p0, false)
+    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        if (sender !is Player) return false
+        if (args.isEmpty()) {
+            switch(sender)
+        } else if ("on".equals(args[0], true)) {
+            switch(sender, true)
+        } else if ("off".equals(args[0], true)) {
+            switch(sender, false)
         } else {
-            switch(p0)
+            switch(sender)
         }
         return true
     }
@@ -49,8 +49,8 @@ class ModeCommand : TabExecutor {
         player.sendMessage(Component.text("§f§l運営モードを切り替えました。"))
     }
 
-    override fun onTabComplete(p0: CommandSender, p1: Command, p2: String, p3: Array<out String>): MutableList<String>? {
-        if (p3.size == 1) {
+    override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): MutableList<String>? {
+        if (args.size == 1) {
             return mutableListOf("on", "off")
         }
         return null

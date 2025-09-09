@@ -10,35 +10,35 @@ import org.bukkit.entity.Player
 class DPSCommand : TabExecutor {
 
     override fun onTabComplete(
-        p0: CommandSender,
-        p1: Command,
-        p2: String,
-        p3: Array<out String>
+        sender: CommandSender,
+        command: Command,
+        alias: String,
+        args: Array<out String>
     ): MutableList<String>? {
-        if (p3.size == 1) {
+        if (args.size == 1) {
             return mutableListOf("on", "off", "clear")
         }
         return null
     }
 
-    override fun onCommand(p0: CommandSender, p1: Command, p2: String, p3: Array<out String>): Boolean {
-        if (p0 !is Player) return false
-        if (p3.size != 1) return sendMessage(p0)
-        val mode = p3[0]
+    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        if (sender !is Player) return false
+        if (args.size != 1) return sendMessage(sender)
+        val mode = args[0]
         if (mode.equals("on", true)) {
-            DPS.on(p0.uniqueId)
-            p0.sendMessage(Component.text("§aDPSの表示を有効にしました。"))
+            DPS.on(sender.uniqueId)
+            sender.sendMessage(Component.text("§aDPSの表示を有効にしました。"))
             return true
         } else if (mode.equals("off", true)) {
-            DPS.off(p0.uniqueId)
-            p0.sendMessage(Component.text("§cDPSの表示を無効にしました。"))
+            DPS.off(sender.uniqueId)
+            sender.sendMessage(Component.text("§cDPSの表示を無効にしました。"))
             return true
         } else if (mode.equals("clear", true)) {
-            DPS.clear(p0.uniqueId)
-            p0.sendMessage(Component.text("§bDPSの履歴を全て消しました。"))
+            DPS.clear(sender.uniqueId)
+            sender.sendMessage(Component.text("§bDPSの履歴を全て消しました。"))
             return true
         }
-        return sendMessage(p0)
+        return sendMessage(sender)
     }
 
     private fun sendMessage(p: CommandSender) : Boolean {

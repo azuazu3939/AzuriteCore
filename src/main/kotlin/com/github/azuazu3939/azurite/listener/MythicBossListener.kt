@@ -1,6 +1,7 @@
 package com.github.azuazu3939.azurite.listener
 
 import com.github.azuazu3939.azurite.Azurite
+import com.github.azuazu3939.azurite.util.PluginDispatchers.runTask
 import io.lumine.mythic.api.adapters.AbstractEntity
 import io.lumine.mythic.bukkit.BukkitAdapter
 import io.lumine.mythic.bukkit.MythicBukkit
@@ -21,12 +22,13 @@ import org.bukkit.persistence.PersistentDataType
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-class MythicBossListener : Listener {
+@Suppress("RedundantSuspendModifier")
+class MythicBossListener(private val plugin: Azurite) : Listener {
 
     private val data: ConcurrentHashMap<UUID, ConcurrentHashMap<UUID, Double>> = ConcurrentHashMap()
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    fun onAdd(event: MythicMobSpawnEvent) {
+    suspend fun onAdd(event: MythicMobSpawnEvent) {
         val mob = event.mob ?: return
         Azurite.runLater(runnable = {
             if (!isRankAble(mob.entity)) return@runLater
@@ -61,7 +63,7 @@ class MythicBossListener : Listener {
     }
 
     @EventHandler
-    fun onDeath(event: MythicMobDeathEvent) {
+    suspend fun onDeath(event: MythicMobDeathEvent) {
         val target = event.mob.entity
         if (!isRankAble(target)) return
 
@@ -70,30 +72,37 @@ class MythicBossListener : Listener {
         val ps = event.killer.location.getNearbyPlayers(48.0)
         val mmid = event.mob.type.internalName
 
-        val messages = mutableListOf<Component>()
-        messages.add(Component.text("§f§l[討伐戦] ${event.mob.name}§r §6§lランキング"))
+        plugin.runTask {
+            async {
+                val messages = mutableListOf<Component>()
+                messages.add(Component.text("§f§l[討伐戦] ${event.mob.name}§r §6§lランキング"))
 
-        sortedPlayers.take(10).forEachIndexed { index, (playerUUID, damage) ->
-            val player = Bukkit.getPlayer(playerUUID)
-            if (player != null) {
-                val rank = index + 1
-                val playerName = player.name
-                val message = "§a§l${rank}位 §6§l${playerName} §f§lスコア §b§l${damage.toLong()}"
-                messages.add(Component.text(message))
+                sortedPlayers.take(10).forEachIndexed { index, (playerUUID, damage) ->
+                    val player = Bukkit.getPlayer(playerUUID)
+                    if (player != null) {
+                        val rank = index + 1
+                        val playerName = player.name
+                        val message = "§a§l${rank}位 §6§l${playerName} §f§lスコア §b§l${damage.toLong()}"
+                        messages.add(Component.text(message))
 
-                for (repeat in 0..10 - rank) {
-                    MythicBukkit.inst().apiHelper.castSkill(player, mmid + "_HighDrop")
+                        (0..10 - rank).forEach { _ ->
+                            sync {
+                                MythicBukkit.inst().apiHelper.castSkill(player, mmid + "_HighDrop")
+                            }
+                        }
+                    }
+                }
+
+                delayTick(20)
+                sync {
+                    ps.forEach { p ->
+                        messages.forEach { msg ->
+                            p.sendMessage(msg)
+                        }
+                    }
                 }
             }
         }
-
-        Azurite.runLater(runnable = {
-            ps.forEach { p ->
-                messages.forEach { msg ->
-                    p.sendMessage(msg)
-                }
-            }
-        }, 20)
     }
 
     @EventHandler

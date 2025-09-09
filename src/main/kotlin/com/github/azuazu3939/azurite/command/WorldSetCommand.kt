@@ -9,10 +9,10 @@ import org.bukkit.entity.Player
 
 class WorldSetCommand : CommandExecutor {
 
-    override fun onCommand(p0: CommandSender, p1: Command, p2: String, p3: Array<out String>): Boolean {
-        if (p0 !is Player) return false
-        val world = p0.world
-        p0.sendMessage(Component.text(world.name + "のgameRuleを更新しました。"))
+    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        if (sender !is Player) return false
+        val world = sender.world
+        sender.sendMessage(Component.text(world.name + "のgameRuleを更新しました。"))
         Util.worldPreset(world, world.difficulty)
         return true
     }

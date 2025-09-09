@@ -16,8 +16,9 @@ open class Mana(private val player: Player) {
     fun getMaxMana(): Double { return getPlayerMaxMana() + getItemMaxMana() + getItemEnchantmentMaxMana() }
 
     fun setMana(value: Double) {
+        val v = getManaLimit(value)
         Azurite.run(runnable = {
-            setMana(getMana(), getManaLimit(value), getMaxMana())
+            setMana(getMana(), v, getMaxMana())
         })
     }
 
