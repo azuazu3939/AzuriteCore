@@ -2,15 +2,17 @@ package com.github.azuazu3939.azurite.mythic.condition
 
 import io.lumine.mythic.api.adapters.AbstractEntity
 import io.lumine.mythic.api.config.MythicLineConfig
+import io.lumine.mythic.api.skills.ThreadSafetyLevel
 import io.lumine.mythic.api.skills.conditions.IEntityComparisonCondition
-import io.lumine.mythic.api.skills.conditions.ISkillCondition
 import io.lumine.mythic.bukkit.BukkitAdapter
+import io.lumine.mythic.core.skills.SkillCondition
 import org.bukkit.FluidCollisionMode
 import org.bukkit.entity.LivingEntity
 
-class IsSight(config: MythicLineConfig) : ISkillCondition, IEntityComparisonCondition {
+class IsSight(config: MythicLineConfig) : SkillCondition(config.line), IEntityComparisonCondition {
 
     override fun check(caster: AbstractEntity?, target: AbstractEntity?): Boolean {
+        threadSafetyLevel = ThreadSafetyLevel.SYNC_ONLY
         val entity = caster?.bukkitEntity as? LivingEntity ?: return false
 
         val hitLoc = entity.rayTraceBlocks(64.0, FluidCollisionMode.ALWAYS)
