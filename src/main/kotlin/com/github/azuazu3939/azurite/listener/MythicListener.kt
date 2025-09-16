@@ -4,6 +4,7 @@ import com.github.azuazu3939.azurite.Azurite
 import com.github.azuazu3939.azurite.mythic.condition.ContainRegion
 import com.github.azuazu3939.azurite.mythic.condition.FromSurface
 import com.github.azuazu3939.azurite.mythic.condition.HasMana
+import com.github.azuazu3939.azurite.mythic.condition.IsSight
 import com.github.azuazu3939.azurite.mythic.condition.ItemGroup
 import com.github.azuazu3939.azurite.mythic.mechanic.*
 import io.lumine.mythic.api.skills.ISkillMechanic
@@ -101,7 +102,9 @@ class MythicListener : Listener {
             "containregion" to { e -> e.register(ContainRegion(e.config)) },
             "containerregion" to { e -> e.register(ContainRegion(e.config)) },
             "itemgroup" to { e -> e.register(ItemGroup(e.config)) },
-            "groupitem" to { e -> e.register(ItemGroup(e.config)) }
+            "groupitem" to { e -> e.register(ItemGroup(e.config)) },
+            "insight" to { e -> e.register(IsSight(e.config)) },
+            "issight" to { e -> e.register(IsSight(e.config)) }
         )
 
         conditionRegistry[event.conditionName.lowercase()]?.invoke(event)
