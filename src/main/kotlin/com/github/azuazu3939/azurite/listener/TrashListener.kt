@@ -32,13 +32,13 @@ class TrashListener : Listener {
                 val p = event.whoClicked as Player
                 p.playSound(p, Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f)
 
-                if (clicked.type == Material.RED_TERRACOTTA) {
-                    val newItem = ItemStack(Material.GREEN_TERRACOTTA, 1)
+                if (clicked.type == Material.YELLOW_TERRACOTTA) {
+                    val newItem = ItemStack(Material.CAMPFIRE, 1)
                     newItem.setItemMeta(clicked.itemMeta)
                     event.currentItem = newItem
 
-                } else if (clicked.type == Material.GREEN_TERRACOTTA) {
-                    val newItem = ItemStack(Material.RED_TERRACOTTA, 1)
+                } else if (clicked.type == Material.CAMPFIRE) {
+                    val newItem = ItemStack(Material.YELLOW_TERRACOTTA, 1)
                     newItem.setItemMeta(clicked.itemMeta)
                     event.currentItem = newItem
                 }
@@ -59,7 +59,7 @@ class TrashListener : Listener {
         val player = event.player as Player
         if (inv.holder is TrashInventory) {
             val check = inv.getItem(53)
-            if (check != null && check.type != Material.GREEN_TERRACOTTA) {
+            if (check != null && check.type != Material.CAMPFIRE) {
                 inv.setItem(53, null)
                 returnItemStacks(player, inv)
                 event.player.sendMessage(Component.text("処理の途中だった為、アイテムが返却されました。"))

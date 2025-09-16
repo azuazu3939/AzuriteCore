@@ -1,5 +1,6 @@
 package com.github.azuazu3939.azurite.command
 
+import com.github.azuazu3939.azurite.listener.MythicListener
 import io.lumine.mythic.bukkit.MythicBukkit
 import net.kyori.adventure.text.Component
 import org.bukkit.NamespacedKey
@@ -21,6 +22,11 @@ class FixCommand : CommandExecutor {
 
         if (item.itemMeta.persistentDataContainer.has(NamespacedKey("mythiccrucible", "bag_inventory"))) {
             sender.sendMessage(Component.text("§cそのアイテムはFix出来ません。"))
+            return true
+        }
+
+        if (MythicListener.isMythicReloading || MythicListener.isReloading) {
+            sender.sendMessage(Component.text("§cリロード前はFix出来ません。"))
             return true
         }
 

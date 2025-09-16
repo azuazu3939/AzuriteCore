@@ -25,6 +25,7 @@ import org.bukkit.event.entity.EntityPickupItemEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.inventory.CraftItemEvent
 import org.bukkit.event.player.*
+import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 
 @Suppress("RedundantSuspendModifier")
@@ -43,7 +44,11 @@ class GenericRulesListener(private val plugin: Azurite) : Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     fun onPreJoin(event: AsyncPlayerPreLoginEvent) {
         DBCon.loadSpawn(event.uniqueId)
+        if (MythicListener.isMythicReloading || MythicListener.isReloading) {
+            event.loginResult = AsyncPlayerPreLoginEvent.Result.KICK_OTHER
+        }
     }
+
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onDrop(event: PlayerDropItemEvent) {
@@ -90,6 +95,18 @@ class GenericRulesListener(private val plugin: Azurite) : Listener {
                 setStep(player)
                 setWayPoint(player)
                 player.updateInventory()
+
+                val list = arrayListOf<ItemStack?>()
+                for (item in player.inventory.contents) {
+                    var i = item
+                    if (item != null && MythicBukkit.inst().itemManager.isMythicItem(item)) {
+                        val mmid = MythicBukkit.inst().itemManager.getMythicTypeFromItem(item)
+                        val get = MythicBukkit.inst().itemManager.getItemStack(mmid, item.amount)
+                        i = get ?: item
+                    }
+                    list.add(i)
+                }
+                player.inventory.contents = list.toTypedArray()
             }
             if (player.hasPermission("azurite.command.mode")) {
                 ModeCommand.switch(player, egod = false, efly = true, ebypass = false)

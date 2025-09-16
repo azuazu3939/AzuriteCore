@@ -8,30 +8,25 @@ group = "com.github.azuazu3939"
 version = "1.0.0"
 
 repositories {
-    mavenLocal()
     mavenCentral()
-    gradlePluginPortal()
+    maven("https://mvn.lumine.io/repository/maven-public/")
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://oss.sonatype.org/content/groups/public/")
-    maven("https://mvn.lumine.io/repository/maven-public/")
-    maven("https://repo.onarandombox.com/content/groups/public/")
-    maven("https://maven.enginehub.org/repo/")
-    maven("https://repo.azisaba.net/repository/maven-public/")
     maven("https://jitpack.io")
-
+    maven("https://maven.enginehub.org/repo/")
+    maven("https://repo.onarandombox.com/public/")
 }
 
 dependencies {
     compileOnly("io.lumine:Mythic-Dist:5.8.2")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.13")
-    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit") {
-        isTransitive = false
-    }
-
     implementation(platform("com.intellectualsites.bom:bom-newest:1.55"))
+    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core")
+    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit") { isTransitive = false }
+
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("com.zaxxer:HikariCP:6.0.0")
-    implementation("org.mariadb.jdbc:mariadb-java-client:3.5.3")
+    implementation("com.zaxxer:HikariCP:7.0.2")
+    implementation("org.mariadb.jdbc:mariadb-java-client:3.5.5")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("com.github.shynixn.mccoroutine:mccoroutine-bukkit-api:2.22.0")
     implementation("com.github.shynixn.mccoroutine:mccoroutine-bukkit-core:2.22.0")
@@ -39,9 +34,8 @@ dependencies {
     paperweight.paperDevBundle("1.21.8-R0.1-SNAPSHOT")
 }
 
-val targetJavaVersion = 21
 kotlin {
-    jvmToolchain(targetJavaVersion)
+    jvmToolchain(21)
 }
 
 tasks {

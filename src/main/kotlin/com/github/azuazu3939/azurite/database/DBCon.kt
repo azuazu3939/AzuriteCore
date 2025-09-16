@@ -9,7 +9,7 @@ import org.mariadb.jdbc.Driver
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.SQLException
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 object DBCon {
@@ -121,10 +121,24 @@ object DBCon {
 
         hikari.jdbcUrl = "$scheme://$host:$port/$database"
         hikari.connectionTimeout = 3000
-        hikari.maximumPoolSize = 10
-        hikari.minimumIdle = 10
+        hikari.maximumPoolSize = 12
+        hikari.minimumIdle = 5
         hikari.username = username
         hikari.password = password
+        hikari.connectionTimeout = 15000
+        hikari.idleTimeout = 600000
+        hikari.maxLifetime = 1800000
+        hikari.connectionInitSql = "SET time_zone = '+09:00'"
+        hikari.addDataSourceProperty("cachePrepStmts", "true")
+        hikari.addDataSourceProperty("prepStmtCacheSize", "250")
+        hikari.addDataSourceProperty("prepStmtCacheSqlLimit", "2048")
+        hikari.addDataSourceProperty("useLocalSessionState", "true")
+        hikari.addDataSourceProperty("useServerPrepStmts", "true")
+        hikari.addDataSourceProperty("rewriteBatchedStatements", "true")
+        hikari.addDataSourceProperty("cacheResultSetMetadata", "true")
+        hikari.addDataSourceProperty("cacheServerConfiguration", "true")
+        hikari.addDataSourceProperty("elideSetAutoCommits", "true")
+        hikari.addDataSourceProperty("maintainTimeStats", "false")
 
         dataSource = HikariDataSource(hikari)
         createTables()

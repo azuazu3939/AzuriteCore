@@ -15,6 +15,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerRespawnEvent
@@ -77,6 +78,13 @@ class StorageItemListener(private val plugin: Azurite) : Listener {
         if (e.item?.itemMeta?.persistentDataContainer?.has(NamespacedKey.minecraft("no_drop")) == true && e.action.isRightClick) {
             e.isCancelled = true
             openWindow(e.player)
+        }
+    }
+
+    @EventHandler
+    fun onDrop(e: PlayerDropItemEvent) {
+        if (e.itemDrop.itemStack.itemMeta?.persistentDataContainer?.has(NamespacedKey.minecraft("no_drop")) == true) {
+            e.isCancelled = true
         }
     }
 
