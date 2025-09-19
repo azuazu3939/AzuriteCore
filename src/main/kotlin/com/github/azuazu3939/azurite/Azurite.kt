@@ -58,6 +58,7 @@ class Azurite : JavaPlugin() {
         getCommand("fly")?.setExecutor(FlyCommand())
         getCommand("god")?.setExecutor(GodCommand())
         getCommand("gm")?.setExecutor(GamemodeCommand())
+        getCommand("flyspeed")?.setExecutor(FlySpeedCommand())
     }
 
     companion object {

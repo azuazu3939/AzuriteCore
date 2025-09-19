@@ -46,6 +46,10 @@ commands:
     permission: azurite.command.fly
   gm:
     permission: azurite.command.gm
+  flyspeed:
+    permission: azurite.command.flyspeed
+    aliases:
+      - fs
 
 permissions:
   azurite.*:
@@ -70,6 +74,7 @@ permissions:
       azurite.command.fly: true
       azurite.command.god: true
       azurite.command.gm: true
+      azurite.command.flyspeed: true
   azurite.reload.mythicmobs:
     default: op
   azurite.command.setmaxmana:
@@ -100,3 +105,5 @@ permissions:
      default: op
   azurite.command.gm:
       default: op
+  azurite.command.flyspeed:
+    default: op
