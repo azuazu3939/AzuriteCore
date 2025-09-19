@@ -41,19 +41,22 @@ class Azurite : JavaPlugin() {
         pm.registerEvents(SummonListener(), this)
         pm.registerEvents(DPSListener(), this)
         pm.registerEvents(TrashListener(), this)
+        pm.registerEvents(GodListener(), this)
     }
 
     private fun registerCommands() {
-        getCommand("worldset")!!.setExecutor(WorldSetCommand())
-        getCommand("mode")!!.setExecutor(ModeCommand())
-        getCommand("setmana")!!.setExecutor(SetManaCommand())
-        getCommand("setmaxmana")!!.setExecutor(SetMaxManaCommand())
-        getCommand("combatlog")!!.setExecutor(CombatLogCommand())
-        getCommand("hopper")!!.setExecutor(HopperCommand())
-        getCommand("dps")!!.setExecutor(DPSCommand())
-        getCommand("fix")!!.setExecutor(FixCommand())
-        getCommand("camera")!!.setExecutor(CameraCommand())
-        getCommand("trash")!!.setExecutor(TrashCommand())
+        getCommand("worldset")?.setExecutor(WorldSetCommand())
+        getCommand("mode")?.setExecutor(ModeCommand())
+        getCommand("setmana")?.setExecutor(SetManaCommand())
+        getCommand("setmaxmana")?.setExecutor(SetMaxManaCommand())
+        getCommand("combatlog")?.setExecutor(CombatLogCommand())
+        getCommand("hopper")?.setExecutor(HopperCommand())
+        getCommand("dps")?.setExecutor(DPSCommand())
+        getCommand("fix")?.setExecutor(FixCommand())
+        getCommand("camera")?.setExecutor(CameraCommand())
+        getCommand("trash")?.setExecutor(TrashCommand())
+        getCommand("fly")?.setExecutor(FlyCommand())
+        getCommand("god")?.setExecutor(GodCommand())
     }
 
     companion object {

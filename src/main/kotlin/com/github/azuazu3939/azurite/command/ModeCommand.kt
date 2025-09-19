@@ -29,8 +29,8 @@ class ModeCommand : TabExecutor {
         } else {
             "disable"
         }
-        player.performCommand("egod $mode")
-        player.performCommand("efly $mode")
+        player.performCommand("god $mode")
+        player.performCommand("fly $mode")
 
         var m = ""
         m += if (bypass) {
@@ -44,8 +44,8 @@ class ModeCommand : TabExecutor {
 
     private fun switch(player: Player) {
         player.performCommand("rg bypass")
-        player.performCommand("efly " + player.name)
-        player.performCommand("egod " + player.name)
+        player.performCommand("fly " + player.name)
+        player.performCommand("god " + player.name)
         player.sendMessage(Component.text("§f§l運営モードを切り替えました。"))
     }
 

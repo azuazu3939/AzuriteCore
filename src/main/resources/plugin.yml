@@ -42,6 +42,8 @@ commands:
     permission: azurite.command.trash
     aliases:
       - gomi
+  fly:
+    permission: azurite.command.fly
 
 permissions:
   azurite.*:
@@ -63,6 +65,8 @@ permissions:
       azurite.command.azurite: true
       azurite.command.camera: true
       azurite.command.trash: true
+      azurite.command.fly: true
+      azurite.command.god: true
   azurite.reload.mythicmobs:
     default: op
   azurite.command.setmaxmana:
@@ -87,3 +91,7 @@ permissions:
     default: true
   gitupdater.command:
     default: op
+  azurite.command.fly:
+    default: op
+  azurite.command.god:
+     default: op
