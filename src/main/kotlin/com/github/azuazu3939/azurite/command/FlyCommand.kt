@@ -17,6 +17,7 @@ class FlyCommand : TabExecutor {
     ): Boolean {
         if (args.isEmpty()) {
             if (sender !is Player) return false
+            sender.allowFlight = !sender.isFlying
             sender.isFlying = !sender.isFlying
             sender.sendMessage(Component.text("§a飛行モードを切り替えました。 ${sender.name}"))
             return true
@@ -37,6 +38,7 @@ class FlyCommand : TabExecutor {
                 return false
             }
             if (sender is Player) {
+                sender.allowFlight = b
                 sender.isFlying = b
                 sender.sendMessage(Component.text("§a飛行モードを切り替えました。 ${sender.name}"))
                 return true
@@ -56,6 +58,7 @@ class FlyCommand : TabExecutor {
                     !p.isFlying
                 }
 
+                p.allowFlight = b
                 p.isFlying = b
                 sender.sendMessage(Component.text("§a飛行モードを切り替えました。 ${p.name}"))
                 return true
