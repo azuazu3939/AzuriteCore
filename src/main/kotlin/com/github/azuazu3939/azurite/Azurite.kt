@@ -57,6 +57,7 @@ class Azurite : JavaPlugin() {
         getCommand("trash")?.setExecutor(TrashCommand())
         getCommand("fly")?.setExecutor(FlyCommand())
         getCommand("god")?.setExecutor(GodCommand())
+        getCommand("gm")?.setExecutor(GamemodeCommand())
     }
 
     companion object {

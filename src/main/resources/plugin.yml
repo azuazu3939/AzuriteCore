@@ -44,6 +44,8 @@ commands:
       - gomi
   fly:
     permission: azurite.command.fly
+  gm:
+    permission: azurite.command.gm
 
 permissions:
   azurite.*:
@@ -67,6 +69,7 @@ permissions:
       azurite.command.trash: true
       azurite.command.fly: true
       azurite.command.god: true
+      azurite.command.gm: true
   azurite.reload.mythicmobs:
     default: op
   azurite.command.setmaxmana:
@@ -95,3 +98,5 @@ permissions:
     default: op
   azurite.command.god:
      default: op
+  azurite.command.gm:
+      default: op

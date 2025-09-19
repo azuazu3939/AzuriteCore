@@ -25,8 +25,11 @@ class GodCommand : TabExecutor {
         label: String,
         args: Array<out String>
     ): List<String?> {
-        if (args.size == 1) {
+        if (args.size == 2) {
             return Bukkit.getOnlinePlayers().map { it.name }
+        }
+        if (args.size == 1) {
+            return arrayListOf("0", "1", "2", "3")
         }
         return emptyList()
     }
