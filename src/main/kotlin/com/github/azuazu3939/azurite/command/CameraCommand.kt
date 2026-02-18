@@ -20,6 +20,10 @@ class CameraCommand : CommandExecutor {
         } else if (v <= 6) {
             attr.baseValue = 8.0
         } else if (v <= 8) {
+            attr.baseValue = 10.0
+        } else if (v <= 10) {
+            attr.baseValue = 12.0
+        } else if (v <= 12) {
             attr.baseValue = 2.0
         }
         sender.sendMessage(Component.text("§fカメラディスタンスを 「${attr.baseValue}」に設定しました。"))

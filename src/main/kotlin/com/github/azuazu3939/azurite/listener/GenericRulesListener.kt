@@ -10,7 +10,6 @@ import io.lumine.mythic.api.adapters.AbstractEntity
 import io.lumine.mythic.bukkit.BukkitAdapter
 import io.lumine.mythic.bukkit.MythicBukkit
 import io.lumine.mythic.bukkit.events.MythicHealMechanicEvent
-import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
@@ -20,12 +19,12 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.CrafterCraftEvent
+import org.bukkit.event.entity.CreatureSpawnEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityPickupItemEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.inventory.CraftItemEvent
 import org.bukkit.event.player.*
-import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 
 @Suppress("RedundantSuspendModifier")
@@ -95,18 +94,6 @@ class GenericRulesListener(private val plugin: Azurite) : Listener {
                 setStep(player)
                 setWayPoint(player)
                 player.updateInventory()
-
-                val list = arrayListOf<ItemStack?>()
-                for (item in player.inventory.contents) {
-                    var i = item
-                    if (item != null && MythicBukkit.inst().itemManager.isMythicItem(item)) {
-                        val mmid = MythicBukkit.inst().itemManager.getMythicTypeFromItem(item)
-                        val get = MythicBukkit.inst().itemManager.getItemStack(mmid, item.amount)
-                        i = get ?: item
-                    }
-                    list.add(i)
-                }
-                player.inventory.contents = list.toTypedArray()
             }
             if (player.hasPermission("azurite.command.mode")) {
                 ModeCommand.switch(player, egod = false, efly = true, ebypass = false)
@@ -126,10 +113,7 @@ class GenericRulesListener(private val plugin: Azurite) : Listener {
                 }
             }
             if (has) {
-                Bukkit.dispatchCommand(
-                    Bukkit.getConsoleSender(),
-                    "kits start " + player.name
-                )
+                MythicBukkit.inst().apiHelper.castSkill(player, "Azuriter_FirstSpawn_1")
             }
         }
     }
@@ -143,8 +127,8 @@ class GenericRulesListener(private val plugin: Azurite) : Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    fun onInteractEntity(evnet: PlayerInteractEntityEvent) {
-        checkNullMythicEntity(BukkitAdapter.adapt(evnet.rightClicked))
+    fun onInteractEntity(event: PlayerInteractEntityEvent) {
+        checkNullMythicEntity(BukkitAdapter.adapt(event.rightClicked))
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -167,6 +151,13 @@ class GenericRulesListener(private val plugin: Azurite) : Listener {
         if (event.entity !is Player) return
         if (event.damager !is Arrow) return
         event.isCancelled = true
+    }
+
+    @EventHandler
+    fun onSpawn(event: CreatureSpawnEvent) {
+        if (event.spawnReason == CreatureSpawnEvent.SpawnReason.SPAWNER) {
+            event.isCancelled = true
+        }
     }
 
     private fun checkNullMythicEntity(entity: AbstractEntity?) {

@@ -1,15 +1,16 @@
 package com.github.azuazu3939.azurite.mythic.mechanic
 
-import com.github.azuazu3939.azurite.mana.ManaRegen
+import dev.aurelium.auraskills.api.AuraSkillsApi
 import io.lumine.mythic.api.adapters.AbstractEntity
 import io.lumine.mythic.api.config.MythicLineConfig
-import io.lumine.mythic.api.skills.*
+import io.lumine.mythic.api.skills.ITargetedEntitySkill
+import io.lumine.mythic.api.skills.SkillMetadata
+import io.lumine.mythic.api.skills.SkillResult
+import io.lumine.mythic.api.skills.ThreadSafetyLevel
 import io.lumine.mythic.api.skills.placeholders.PlaceholderBoolean
 import io.lumine.mythic.api.skills.placeholders.PlaceholderDouble
-import io.lumine.mythic.bukkit.BukkitAdapter
 import io.lumine.mythic.core.skills.SkillExecutor
 import io.lumine.mythic.core.skills.SkillMechanic
-import org.bukkit.entity.Player
 import java.io.File
 
 class ModifyMana(manager: SkillExecutor, file: File, line: String, mlc: MythicLineConfig?) : SkillMechanic(manager, file, line, mlc), ITargetedEntitySkill {
@@ -26,12 +27,11 @@ class ModifyMana(manager: SkillExecutor, file: File, line: String, mlc: MythicLi
         if (p1 == null) return SkillResult.INVALID_TARGET
         if (!p1.isPlayer) return SkillResult.INVALID_TARGET
 
-        val player = BukkitAdapter.adapt(p1) as Player
+        val user = AuraSkillsApi.get().getUser(p1.uniqueId)
         if (isMultiply.get(p0)) {
-            ManaRegen(player).regen(add.get(p0))
+            user.mana = (user.maxMana * add.get(p1) + user.mana).coerceAtMost(user.maxMana)
         } else {
-            val mana = ManaRegen(player)
-            mana.setMana((add.get(p0) + mana.getMana()).coerceAtMost(mana.getMaxMana()))
+            user.mana = (add.get(p0) + user.mana).coerceAtMost(user.maxMana)
         }
         return SkillResult.SUCCESS
     }

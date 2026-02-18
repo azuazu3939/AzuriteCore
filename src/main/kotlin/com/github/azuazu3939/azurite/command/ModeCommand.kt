@@ -65,7 +65,7 @@ class ModeCommand : TabExecutor {
             } else {
                 "disable"
             }
-            player.performCommand("egod $god")
+            player.performCommand("god $god")
 
             var fly = ""
             fly += if (efly) {
@@ -73,7 +73,7 @@ class ModeCommand : TabExecutor {
             } else {
                 "disable"
             }
-            player.performCommand("efly $fly")
+            player.performCommand("fly $fly")
 
             var bypass = ""
             bypass += if (ebypass) {

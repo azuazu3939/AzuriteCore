@@ -6,6 +6,7 @@ authors: [ MCLove32 ]
 
 depend:
   - MythicMobs
+  - AuraSkills
 
 commands:
   worldset:
@@ -16,16 +17,6 @@ commands:
     permission: azurite.command.mode
     aliases:
       - md
-  setmana:
-    permission: azurite.command.setmana
-    aliases:
-      - addmana
-      - addMana
-      - setMana
-  setmaxmana:
-    permission: azurite.command.setmaxmana
-    aliases:
-      - setmm
   combatlog:
     permission: azurite.command.combatlog
     aliases:
@@ -34,8 +25,6 @@ commands:
     permission: azurite.command.hopper
   dps:
     permission: azurite.command.dps
-  fix:
-    permission: azurite.command.fix
   camera:
     permission: azurite.command.camera
   trash:
@@ -50,6 +39,11 @@ commands:
     permission: azurite.command.flyspeed
     aliases:
       - fs
+  lostbox:
+    permission: azurite.command.lostbox
+    aliases:
+      - lost
+      - lb
 
 permissions:
   azurite.*:
@@ -60,26 +54,19 @@ permissions:
   azurite.command.*:
     default: false
     children:
-      azurite.command.setmaxmana: true
-      azurite.command.setmana: true
       azurite.command.mode: true
       azurite.command.worldset: true
       azurite.command.combatlog: true
       azurite.command.hopper: true
       azurite.command.dps: true
-      azurite.command.fix: true
       azurite.command.azurite: true
       azurite.command.camera: true
       azurite.command.trash: true
       azurite.command.fly: true
-      azurite.command.god: true
       azurite.command.gm: true
       azurite.command.flyspeed: true
+      azurite.command.lostbox: true
   azurite.reload.mythicmobs:
-    default: op
-  azurite.command.setmaxmana:
-    default: op
-  azurite.command.setmana:
     default: op
   azurite.command.mode:
     default: op
@@ -91,8 +78,6 @@ permissions:
     default: op
   azurite.command.dps:
     default: op
-  azurite.command.fix:
-    default: op
   azurite.command.camera:
     default: true
   azurite.command.trash:
@@ -101,9 +86,9 @@ permissions:
     default: op
   azurite.command.fly:
     default: op
-  azurite.command.god:
-     default: op
   azurite.command.gm:
       default: op
   azurite.command.flyspeed:
     default: op
+  azurite.command.lostbox:
+     default: true

@@ -33,13 +33,13 @@ class FlySpeedCommand : TabExecutor {
             }
             var num: Float
             try {
-                num = args[0].toFloat()
+                num = args[0].toDouble().coerceIn(0.0, 10.0).toFloat()
             } catch (e: NumberFormatException) {
                 sender.sendMessage(Component.text("§a/fs [Float] [<PlayerName>]"))
                 return false
             }
-            sender.flySpeed = num
-            sender.sendMessage(Component.text("§a飛行速度を変更しました。"))
+            sender.flySpeed = num * 0.1f
+            sender.sendMessage(Component.text("§a飛行速度を変更しました。スピード $num"))
             return true
         }
         if (args.size == 2) {
@@ -50,13 +50,13 @@ class FlySpeedCommand : TabExecutor {
             }
             var num: Float
             try {
-                num = args[0].toFloat()
+                num = args[0].toDouble().coerceIn(0.0, 10.0).toFloat()
             } catch (e: NumberFormatException) {
                 sender.sendMessage(Component.text("§a/fs [Float] [<PlayerName>]"))
                 return false
             }
-            p.flySpeed = num
-            sender.sendMessage(Component.text("§a飛行速度を変更しました。"))
+            p.flySpeed = num * 0.1f
+            sender.sendMessage(Component.text("§a飛行速度を変更しました。スピード $num"))
         }
         sender.sendMessage(Component.text("§a/fs [Float] [<PlayerName>]"))
         return false

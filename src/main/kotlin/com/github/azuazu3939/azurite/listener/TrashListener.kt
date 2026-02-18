@@ -25,22 +25,17 @@ class TrashListener : Listener {
         if (event.inventory.holder is TrashInventory) {
             val clicked = event.currentItem
             if (clicked == null || clicked.type == Material.AIR) return
-            clicked.serializeAsBytes()
             if (clicked.persistentDataContainer.has(NamespacedKey("az", "trash"))) {
 
                 event.isCancelled = true
                 val p = event.whoClicked as Player
                 p.playSound(p, Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1f)
 
-                if (clicked.type == Material.YELLOW_TERRACOTTA) {
-                    val newItem = ItemStack(Material.CAMPFIRE, 1)
-                    newItem.setItemMeta(clicked.itemMeta)
-                    event.currentItem = newItem
+                if (clicked.type == Material.BONE_MEAL) {
+                    event.currentItem = TRASH_FIRE
 
                 } else if (clicked.type == Material.CAMPFIRE) {
-                    val newItem = ItemStack(Material.YELLOW_TERRACOTTA, 1)
-                    newItem.setItemMeta(clicked.itemMeta)
-                    event.currentItem = newItem
+                    event.currentItem = TRASH_BOX
                 }
             }
         }
@@ -94,5 +89,31 @@ class TrashListener : Listener {
                 player.world.dropItem(player.location, dropStack)
             }
         }
+    }
+
+    companion object {
+        private fun getTrashBox(): ItemStack {
+            val item = ItemStack(Material.BONE_MEAL, 1)
+            val meta = item.itemMeta!!
+            meta.displayName(Component.text("§c§lゴミを捨てる"))
+            meta.persistentDataContainer.set(NamespacedKey("az", "trash"), PersistentDataType.STRING, "true")
+            item.itemMeta = meta
+
+            return item
+        }
+
+        private fun getTrashFire(): ItemStack {
+            val item = ItemStack(Material.CAMPFIRE, 1)
+            val meta = item.itemMeta!!
+            meta.displayName(Component.text("§c§lゴミを捨てる"))
+            meta.persistentDataContainer.set(NamespacedKey("az", "trash"), PersistentDataType.STRING, "true")
+            item.itemMeta = meta
+
+            return item
+        }
+
+        val TRASH_BOX = getTrashBox()
+
+        val TRASH_FIRE = getTrashFire()
     }
 }

@@ -1,7 +1,7 @@
 package com.github.azuazu3939.azurite.listener
 
 import com.github.azuazu3939.azurite.Azurite
-import com.github.azuazu3939.azurite.mana.ManaRegen
+import dev.aurelium.auraskills.api.AuraSkillsApi
 import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -21,36 +21,21 @@ class EatListener : Listener {
         if (entity !is Player) return
 
         val uuid = entity.uniqueId
-        if (countMap.getOrDefault(uuid, 0) >= 10) return
+        if (countMap.getOrDefault(uuid, 0) >= 15) return
 
         when (event.regainReason) {
             SATIATED -> {
-                ManaRegen(entity).regen(0.05)
+                val user = AuraSkillsApi.get().getUser(uuid)
+                user.mana = (user.maxMana * 0.05 + user.mana).coerceAtMost(user.maxMana)
                 event.amount += entity.getAttribute(Attribute.MAX_HEALTH)!!.value * 0.05
-                healCounter(uuid, 1)
-            }
-            EATING -> {
-                event.amount *= 1.25
-                healCounter(uuid, 1)
-            }
-            MAGIC_REGEN -> {
-                event.amount *= 1.5
-                healCounter(uuid, 1)
-            }
-            MAGIC -> {
-                event.amount *= 1.5
-                healCounter(uuid, 2)
-            }
-            CUSTOM -> {
-                event.amount *= 1.5
-                healCounter(uuid, 2)
+                healCounter(uuid)
             }
             else -> return
         }
     }
 
-    private fun healCounter(uuid: UUID, value: Int) {
-        countMap.merge(uuid, value, Int::plus)
+    private fun healCounter(uuid: UUID) {
+        countMap.merge(uuid, 1, Int::plus)
         Azurite.runAsyncLater(runnable = { countMap.merge(uuid, 1, Int::minus) }, 600)
     }
 }

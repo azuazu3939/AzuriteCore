@@ -3,7 +3,6 @@ package com.github.azuazu3939.azurite.listener
 import com.github.azuazu3939.azurite.Azurite
 import com.github.azuazu3939.azurite.mythic.condition.ContainRegion
 import com.github.azuazu3939.azurite.mythic.condition.FromSurface
-import com.github.azuazu3939.azurite.mythic.condition.HasMana
 import com.github.azuazu3939.azurite.mythic.condition.IsSight
 import com.github.azuazu3939.azurite.mythic.condition.ItemGroup
 import com.github.azuazu3939.azurite.mythic.mechanic.*
@@ -94,8 +93,6 @@ class MythicListener : Listener {
     @EventHandler
     fun onConditions(event: MythicConditionLoadEvent) {
         val conditionRegistry: Map<String, (MythicConditionLoadEvent) -> Unit> = mapOf(
-            "hasmana" to { e -> e.register(HasMana(e.config)) },
-            "ismana" to { e -> e.register(HasMana(e.config)) },
             "surface" to { e -> e.register(FromSurface(e.config)) },
             "fromsurface" to { e -> e.register(FromSurface(e.config)) },
             "containsregion" to { e -> e.register(ContainRegion(e.config)) },

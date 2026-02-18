@@ -12,7 +12,7 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.EquipmentSlot
 import java.util.*
 
-class AttackListener : Listener {
+class MeleeListener : Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun omAttack(event: PrePlayerAttackEntityEvent) {

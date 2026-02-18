@@ -3,16 +3,13 @@ package com.github.azuazu3939.azurite.listener
 import com.github.azuazu3939.azurite.Azurite
 import com.github.azuazu3939.azurite.util.PluginDispatchers.runTask
 import io.lumine.mythic.api.adapters.AbstractEntity
-import io.lumine.mythic.bukkit.BukkitAdapter
 import io.lumine.mythic.bukkit.MythicBukkit
 import io.lumine.mythic.bukkit.events.MythicDamageEvent
 import io.lumine.mythic.bukkit.events.MythicMobDeathEvent
 import io.lumine.mythic.bukkit.events.MythicMobDespawnEvent
 import io.lumine.mythic.bukkit.events.MythicMobSpawnEvent
-import io.lumine.mythic.core.mobs.ActiveMob
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
-import org.bukkit.GameMode
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -60,6 +57,18 @@ class MythicBossListener(private val plugin: Azurite) : Listener {
         val player = caster.bukkitEntity as Player
         val damage = event.damage * DamageCalculationListener.damageResistance(target.bukkitEntity)
         data.computeIfAbsent(target.uniqueId) { ConcurrentHashMap() }.merge(player.uniqueId, damage, Double::plus)
+
+        //タンク報酬
+        val tank = target.target
+        if (!tank.isPlayer) return
+        val ac = MythicBukkit.inst().apiHelper.getMythicMobInstance(target.bukkitEntity)
+        if (!ac.hasThreatTable()) return
+
+        val table = ac.threatTable
+        val count = table.allThreatTargets.count { target -> target.isPlayer }
+        if (count <= 0) return
+
+        data.computeIfAbsent(target.uniqueId) { ConcurrentHashMap() }.merge(tank.uniqueId, damage / count, Double::plus)
     }
 
     @EventHandler
@@ -85,11 +94,7 @@ class MythicBossListener(private val plugin: Azurite) : Listener {
                         val message = "§a§l${rank}位 §6§l${playerName} §f§lスコア §b§l${damage.toLong()}"
                         messages.add(Component.text(message))
 
-                        (0..10 - rank).forEach { _ ->
-                            sync {
-                                MythicBukkit.inst().apiHelper.castSkill(player, mmid + "_HighDrop")
-                            }
-                        }
+                        MythicBukkit.inst().apiHelper.castSkill(player, mmid + "_HighDrop")
                     }
                 }
 
@@ -112,57 +117,8 @@ class MythicBossListener(private val plugin: Azurite) : Listener {
         data.remove(target.uniqueId)
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
-    fun onCombat(event: MythicDamageEvent) {
-        val ab = event.target
-        if (!isRaidAble(ab)) return
-        scheduleBossHealthUpdate(ab)
-    }
-
-    private fun isRaidAble(abstractEntity: AbstractEntity): Boolean {
-        val ac = MythicBukkit.inst().mobManager.getActiveMob(abstractEntity.uniqueId).orElse(null)
-        return ac != null && ac.hasThreatTable() && abstractEntity.dataContainer.has(NamespacedKey("az", "raid_boss"), PersistentDataType.STRING)
-    }
-
     private fun isRankAble(abstractEntity: AbstractEntity): Boolean {
         val ac = MythicBukkit.inst().mobManager.getActiveMob(abstractEntity.uniqueId).orElse(null)
         return ac != null && ac.hasThreatTable() && abstractEntity.dataContainer.has(NamespacedKey("az", "ranking"), PersistentDataType.STRING)
-    }
-
-    private fun scheduleBossHealthUpdate(ab: AbstractEntity) {
-        Azurite.runLater(runnable = {
-            val mob = MythicBukkit.inst().mobManager.getActiveMob(ab.uniqueId).orElse(null)
-            if (mob != null) {
-                updateBossHealth(ab, mob)
-            }
-        }, 1)
-    }
-
-    private fun updateBossHealth(ab: AbstractEntity, mob: ActiveMob) {
-        val players = getNearByPlayers(mob.threatTable, ab)
-
-        val max = mob.type.health.get() * getHealthPerPlayer(players.size)
-        val now = ab.health
-
-        if (ab.maxHealth == max) return
-
-        val scale = max / ab.maxHealth
-        val set = now * scale
-        ab.maxHealth = max
-        Azurite.runLater(runnable = { ab.health = set }, 1)
-    }
-
-    private fun getNearByPlayers(table: ActiveMob.ThreatTable, ab: AbstractEntity) : Set<Player> {
-        return table.allThreatTargets.asSequence()
-            .filter { it != null && it.isPlayer }
-            .map { BukkitAdapter.adapt(it) as Player }
-            .filter { it.world.name.equals(ab.world.name, true) }
-            .filter { it.gameMode == GameMode.SURVIVAL || it.gameMode == GameMode.ADVENTURE }
-            .filter { ab.bukkitEntity.location.distance(it.location) <= 64 }
-            .toSet()
-    }
-
-    private fun getHealthPerPlayer(n: Int) : Double {
-        return n - 0.4 * (n - 1)
     }
 }
