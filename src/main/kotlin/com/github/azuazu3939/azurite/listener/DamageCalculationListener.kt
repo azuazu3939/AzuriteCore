@@ -1,20 +1,53 @@
 package com.github.azuazu3939.azurite.listener
 
 import com.github.azuazu3939.azurite.mythic.MythicTrigger
+import com.google.common.base.Function
 import io.lumine.mythic.bukkit.events.MythicDamageEvent
+import org.bukkit.damage.DamageSource
+import org.bukkit.damage.DamageType
 import org.bukkit.entity.Entity
 import org.bukkit.entity.LivingEntity
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.potion.PotionEffectType
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
 class DamageCalculationListener : Listener {
 
+    @Suppress("DEPRECATION", "UnstableApiUsage")
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onPlayerAttack(event: MythicDamageEvent) {
+        if (!event.caster.entity.isPlayer) return
+        if (event.target.isPlayer) return
+
+        val attacker = event.caster.entity
+        val victim = event.target
+        val zero = Function<Double, Double> { -0.0 }
+
+        val ev = EntityDamageByEntityEvent(attacker.bukkitEntity, victim.bukkitEntity,
+            EntityDamageEvent.DamageCause.ENTITY_ATTACK,
+            DamageSource.builder(DamageType.PLAYER_ATTACK)
+                .withDamageLocation(victim.bukkitEntity.location)
+                .withCausingEntity(attacker.bukkitEntity)
+                .withDirectEntity(victim.bukkitEntity)
+                .build(),
+            mutableMapOf<EntityDamageEvent.DamageModifier, Double>().apply {
+                put(EntityDamageEvent.DamageModifier.BASE, event.damage)
+            },
+            mutableMapOf<EntityDamageEvent.DamageModifier, Function<Double, Double>>().apply {
+                put(EntityDamageEvent.DamageModifier.BASE, zero)
+            },
+            false
+        )
+        ev.callEvent()
+        event.damage = ev.finalDamage
+    }
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    fun onDamaged(event: MythicDamageEvent) {
+    fun onAttack(event: MythicDamageEvent) {
         val attacker = event.caster.entity
         val victim = event.target
 
@@ -23,7 +56,7 @@ class DamageCalculationListener : Listener {
         val toughness = victim.armorToughness
         val attack = attacker.damage
 
-        event.damage = calculation(base, attack, armor, toughness)
+        event.damage = calculation(base, attack, armor, toughness) / 2
         MythicTrigger(event.caster).triggerAzu(victim)
     }
 

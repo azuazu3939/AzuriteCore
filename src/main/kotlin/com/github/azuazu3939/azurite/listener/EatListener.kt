@@ -21,7 +21,7 @@ class EatListener : Listener {
         if (entity !is Player) return
 
         val uuid = entity.uniqueId
-        if (countMap.getOrDefault(uuid, 0) >= 15) return
+        if (countMap.getOrDefault(uuid, 0) >= 5) return
 
         when (event.regainReason) {
             SATIATED -> {

@@ -4,12 +4,13 @@ import com.github.azuazu3939.azurite.Azurite
 import com.github.azuazu3939.azurite.command.ModeCommand
 import com.github.azuazu3939.azurite.database.DBCon
 import com.github.azuazu3939.azurite.mythic.MythicTrigger
+import com.github.azuazu3939.azurite.util.PacketUtil
 import com.github.azuazu3939.azurite.util.PluginDispatchers.runTask
 import com.github.azuazu3939.azurite.util.Util
-import io.lumine.mythic.api.adapters.AbstractEntity
 import io.lumine.mythic.bukkit.BukkitAdapter
 import io.lumine.mythic.bukkit.MythicBukkit
 import io.lumine.mythic.bukkit.events.MythicHealMechanicEvent
+import org.bukkit.GameMode
 import org.bukkit.NamespacedKey
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
@@ -24,7 +25,10 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityPickupItemEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.inventory.CraftItemEvent
-import org.bukkit.event.player.*
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent
+import org.bukkit.event.player.PlayerChangedWorldEvent
+import org.bukkit.event.player.PlayerDropItemEvent
+import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.persistence.PersistentDataType
 
 @Suppress("RedundantSuspendModifier")
@@ -90,10 +94,14 @@ class GenericRulesListener(private val plugin: Azurite) : Listener {
         plugin.runTask {
             delayTick(30)
             sync {
+
+                PacketUtil.inject(player)
+
                 Util.removeAttribute(player, Attribute.STEP_HEIGHT, NamespacedKey("az", "default-step-height"))
                 setStep(player)
                 setWayPoint(player)
                 player.updateInventory()
+                player.gameMode = GameMode.ADVENTURE
             }
             if (player.hasPermission("azurite.command.mode")) {
                 ModeCommand.switch(player, egod = false, efly = true, ebypass = false)
@@ -126,11 +134,6 @@ class GenericRulesListener(private val plugin: Azurite) : Listener {
         setWayPoint(player)
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    fun onInteractEntity(event: PlayerInteractEntityEvent) {
-        checkNullMythicEntity(BukkitAdapter.adapt(event.rightClicked))
-    }
-
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onHeal(event: MythicHealMechanicEvent) {
         val entity = BukkitAdapter.adapt(event.target)
@@ -157,14 +160,6 @@ class GenericRulesListener(private val plugin: Azurite) : Listener {
     fun onSpawn(event: CreatureSpawnEvent) {
         if (event.spawnReason == CreatureSpawnEvent.SpawnReason.SPAWNER) {
             event.isCancelled = true
-        }
-    }
-
-    private fun checkNullMythicEntity(entity: AbstractEntity?) {
-        if (entity == null || entity.bukkitEntity == null) return
-        val mob = MythicBukkit.inst().mobManager
-        if (!mob.isActiveMob(entity)) {
-            Azurite.runLater(entity::remove, 1)
         }
     }
 

@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm") version "2.2.20-RC"
     id("com.gradleup.shadow") version "9.0.0-beta11"
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.18"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.19"
 }
 
 group = "com.github.azuazu3939"
@@ -18,7 +18,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.lumine:Mythic-Dist:5.8.2")
+    compileOnly("io.lumine:Mythic-Dist:5.11.2")
+    compileOnly("io.lumine:MythicCrucible-Dist:2.2.0")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.13")
     implementation(platform("com.intellectualsites.bom:bom-newest:1.55"))
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core")

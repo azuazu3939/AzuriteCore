@@ -65,9 +65,10 @@ class MythicBossListener(private val plugin: Azurite) : Listener {
         if (!ac.hasThreatTable()) return
 
         val table = ac.threatTable
-        val count = table.allThreatTargets.count { target -> target.isPlayer }
+        var count = table.allThreatTargets.count { target -> target.isPlayer }
         if (count <= 0) return
 
+        count++
         data.computeIfAbsent(target.uniqueId) { ConcurrentHashMap() }.merge(tank.uniqueId, damage / count, Double::plus)
     }
 

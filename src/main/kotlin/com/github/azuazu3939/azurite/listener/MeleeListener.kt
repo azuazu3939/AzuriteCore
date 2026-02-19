@@ -3,10 +3,9 @@ package com.github.azuazu3939.azurite.listener
 import com.github.azuazu3939.azurite.util.Util
 import com.google.common.collect.HashMultimap
 import io.lumine.mythic.bukkit.MythicBukkit
-import io.papermc.paper.event.player.PrePlayerAttackEntityEvent
+import io.papermc.paper.event.player.PlayerArmSwingEvent
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
-import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.EquipmentSlot
@@ -14,15 +13,15 @@ import java.util.*
 
 class MeleeListener : Listener {
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    fun omAttack(event: PrePlayerAttackEntityEvent) {
-        event.isCancelled = true
+    @EventHandler
+    fun onInteract(event: PlayerInteractEvent) {
+        if (event.action.isRightClick || event.hand == null || event.hand == EquipmentSlot.OFF_HAND) return
         attack(event.player)
     }
 
     @EventHandler
-    fun onInteract(event: PlayerInteractEvent) {
-        if (event.action.isRightClick || event.hand == null || event.hand == EquipmentSlot.OFF_HAND) return
+    fun onInteract(event: PlayerArmSwingEvent) {
+        if (event.hand == EquipmentSlot.OFF_HAND) return
         attack(event.player)
     }
 

@@ -3,6 +3,7 @@ package com.github.azuazu3939.azurite
 import com.github.azuazu3939.azurite.command.*
 import com.github.azuazu3939.azurite.database.DBCon
 import com.github.azuazu3939.azurite.listener.*
+import com.github.azuazu3939.azurite.util.PacketUtil
 import com.github.shynixn.mccoroutine.bukkit.asyncDispatcher
 import com.github.shynixn.mccoroutine.bukkit.registerSuspendingEvents
 import com.github.shynixn.mccoroutine.bukkit.setSuspendingExecutor
@@ -18,12 +19,19 @@ class Azurite : JavaPlugin() {
         registerListeners()
         registerCommands()
 
+        Bukkit.getOnlinePlayers().forEach {
+            PacketUtil.inject(it)
+        }
+
         runLater(runnable = {
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "mm re -a")
         }, 20)
     }
 
     override fun onDisable() {
+        Bukkit.getOnlinePlayers().forEach {
+            PacketUtil.eject(it)
+        }
         DBCon.close()
     }
 
