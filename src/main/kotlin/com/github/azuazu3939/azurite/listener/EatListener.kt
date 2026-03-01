@@ -1,13 +1,12 @@
 package com.github.azuazu3939.azurite.listener
 
 import com.github.azuazu3939.azurite.Azurite
-import dev.aurelium.auraskills.api.AuraSkillsApi
 import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityRegainHealthEvent
-import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.*
+import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED
 import java.util.*
 
 class EatListener : Listener {
@@ -25,8 +24,6 @@ class EatListener : Listener {
 
         when (event.regainReason) {
             SATIATED -> {
-                val user = AuraSkillsApi.get().getUser(uuid)
-                user.mana = (user.maxMana * 0.05 + user.mana).coerceAtMost(user.maxMana)
                 event.amount += entity.getAttribute(Attribute.MAX_HEALTH)!!.value * 0.05
                 healCounter(uuid)
             }

@@ -115,7 +115,7 @@ object Util {
         world.setGameRule(GameRule.DO_TILE_DROPS, false)
         world.setGameRule(GameRule.DO_MOB_LOOT, false)
         world.setGameRule(GameRule.DO_ENTITY_DROPS, false)
-        world.setGameRule(GameRule.PLAYERS_SLEEPING_PERCENTAGE, 1)
+        world.setGameRule(GameRule.PLAYERS_SLEEPING_PERCENTAGE, 120)
         world.pvp = false
         world.voidDamageAmount = 1000F
         world.voidDamageMinBuildHeightOffset = 0.0

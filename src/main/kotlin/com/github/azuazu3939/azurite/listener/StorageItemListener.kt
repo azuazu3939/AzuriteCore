@@ -1,15 +1,15 @@
 package com.github.azuazu3939.azurite.listener
 
 import com.github.azuazu3939.azurite.Azurite
-import com.github.azuazu3939.azurite.util.PluginDispatchers.runTask
 import com.github.azuazu3939.azurite.util.Util
 import com.google.common.collect.HashMultimap
-import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
+import net.minecraft.world.item.component.CustomModelData
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.Sound
+import org.bukkit.craftbukkit.inventory.components.CraftCustomModelDataComponent
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -20,18 +20,41 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import java.util.*
 
-@Suppress("RedundantSuspendModifier")
+@Suppress("UnstableApiUsage")
 class StorageItemListener(private val plugin: Azurite) : Listener {
+
+    companion object {
+        private val KEY_NO_DROP = NamespacedKey.minecraft("no_drop")
+        private val COOLDOWN_MAP = HashMultimap.create<Class<*>, UUID>()
+
+        // 生成コスト削減のためキャッシュ
+        private val MENU_ITEM: ItemStack = ItemStack(Material.OAK_DOOR).apply {
+            val meta = itemMeta!!
+            meta.displayName(Component.text("§f§lメニューGUI"))
+            meta.lore(listOf(Component.text("§fクリックで開きます。カーソル移動でキャンセル。")))
+            meta.persistentDataContainer.set(KEY_NO_DROP, PersistentDataType.BOOLEAN, true)
+            meta.setCustomModelDataComponent(CraftCustomModelDataComponent(CustomModelData(listOf(100000.toFloat()), emptyList(), emptyList(), emptyList())))
+            itemMeta = meta
+        }
+    }
+
+    /* -------------------------
+       Utility
+     ------------------------- */
+
+    private fun ItemStack?.isMenuItem(): Boolean {
+        return this?.itemMeta
+            ?.persistentDataContainer
+            ?.has(KEY_NO_DROP) == true
+    }
+
+    /* -------------------------
+       Events
+     ------------------------- */
 
     @EventHandler
     fun onSwap(e: PlayerSwapHandItemsEvent) {
-        val item = e.mainHandItem
-        if (item.itemMeta?.persistentDataContainer?.has(NamespacedKey.minecraft("no_drop")) == true) {
-            e.isCancelled = true
-            return
-        }
-        val off = e.offHandItem
-        if (off.itemMeta?.persistentDataContainer?.has(NamespacedKey.minecraft("no_drop")) == true) {
+        if (e.mainHandItem.isMenuItem() || e.offHandItem.isMenuItem()) {
             e.isCancelled = true
         }
     }
@@ -39,88 +62,88 @@ class StorageItemListener(private val plugin: Azurite) : Listener {
     @EventHandler
     fun onJoin(e: PlayerJoinEvent) {
         val player = e.player
-        Azurite.runLater(runnable = {
-            player.inventory.filter {
-                it != null && it.itemMeta?.persistentDataContainer?.has(NamespacedKey.minecraft("no_drop")) == true
-            }.forEach {
-                player.inventory.removeItem(it)
-            }
-            player.inventory.setItem(8, getBoxItemStack())
-        },30)
-    }
 
-    private fun getBoxItemStack(): ItemStack {
-        val item = ItemStack(Material.OAK_DOOR, 1)
-        val meta = item.itemMeta
-        meta.displayName(Component.text("§f§lメニューGUI"))
-        meta.persistentDataContainer.set(NamespacedKey.minecraft("no_drop"), PersistentDataType.BOOLEAN, true)
-        meta.lore(
-            mutableListOf(Component.text("§fクリックで開きます。カーソル移動でキャンセル。"))
-        )
-        item.itemMeta = meta
-        return item
+        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+
+            // ストリーム生成を避ける
+            val inv = player.inventory
+            for (i in 0 until inv.size) {
+                if (inv.getItem(i).isMenuItem()) {
+                    inv.setItem(i, null)
+                }
+            }
+
+            inv.setItem(8, MENU_ITEM.clone()) // cloneで安全に
+
+        }, 30L)
     }
 
     @EventHandler(ignoreCancelled = true)
     fun onClick(e: InventoryClickEvent) {
-        val item = e.currentItem
-        if (item?.itemMeta?.persistentDataContainer?.has(NamespacedKey.minecraft("no_drop")) == true) {
+        if (e.currentItem.isMenuItem()) {
             e.isCancelled = true
         }
     }
 
     @EventHandler
-    suspend fun onInteract(e: PlayerInteractEvent) {
-        if (e.item?.itemMeta?.persistentDataContainer?.has(NamespacedKey.minecraft("no_drop")) == true && e.action.isRightClick) {
-            e.isCancelled = true
-            openWindow(e.player)
-        }
+    fun onInteract(e: PlayerInteractEvent) {
+        val item = e.item
+        if (!item.isMenuItem() || !e.action.isRightClick) return
+
+        e.isCancelled = true
+        openWindow(e.player)
     }
 
     @EventHandler
     fun onDrop(e: PlayerDropItemEvent) {
-        if (e.itemDrop.itemStack.itemMeta?.persistentDataContainer?.has(NamespacedKey.minecraft("no_drop")) == true) {
+        if (e.itemDrop.itemStack.isMenuItem()) {
             e.isCancelled = true
         }
     }
 
     @EventHandler
     fun onDeath(e: PlayerDeathEvent) {
-        val chest = e.player.inventory.getItem(8)
-        if (chest != null) {
-            if (chest.itemMeta?.persistentDataContainer?.has(NamespacedKey.minecraft("no_drop")) == true)
-                chest.amount = 0
+        val inv = e.player.inventory
+        if (inv.getItem(8).isMenuItem()) {
+            inv.setItem(8, null)
         }
     }
 
     @EventHandler
     fun onRespawn(e: PlayerRespawnEvent) {
-        e.player.inventory.setItem(8, getBoxItemStack())
+        e.player.inventory.setItem(8, MENU_ITEM.clone())
     }
 
-    private suspend fun openWindow(e: Player) {
-        if (Util.isCooldown(javaClass, e.uniqueId, multimap)) return
-        Util.setCooldown(javaClass, e.uniqueId, multimap, 30)
+    /* -------------------------
+       Window Logic
+     ------------------------- */
 
-        plugin.runTask {
-            async {
-                e.playSound(e, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
-                delay(5L * 50)
-                e.playSound(e, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
-                delay(5L * 50)
-            }
-            sync {
-                if (e.inventory.heldItemSlot == 8) {
-                    e.closeInventory()
-                    e.playSound(e, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 0.5f)
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "pa open menu " + e.name)
-                } else {
-                    e.playSound(e, Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 0.5f)
-                }
-            }
+    private fun openWindow(player: Player) {
+
+        // クールダウン
+        if (Util.isCooldown(javaClass, player.uniqueId, COOLDOWN_MAP)) return
+        Util.setCooldown(javaClass, player.uniqueId, COOLDOWN_MAP, 30)
+
+        // 先にスロット確認（無駄な処理削減）
+        if (player.inventory.heldItemSlot != 8) {
+            player.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 0.5f)
+            return
         }
+
+        // 軽量サウンド処理
+        player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
+
+        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+            player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
+        }, 5L)
+
+        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+            player.closeInventory()
+            player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 0.5f)
+            Bukkit.dispatchCommand(
+                Bukkit.getConsoleSender(),
+                "pa open menu ${player.name}"
+            )
+        }, 10L)
     }
-     companion object {
-         private val multimap = HashMultimap.create<Class<*>, UUID>()
-     }
 }

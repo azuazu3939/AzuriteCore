@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "2.2.20-RC"
+    kotlin("jvm") version "2.3.20-RC"
     id("com.gradleup.shadow") version "9.0.0-beta11"
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.19"
 }
@@ -23,7 +23,6 @@ dependencies {
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.13")
     implementation(platform("com.intellectualsites.bom:bom-newest:1.55"))
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core")
-    compileOnly("dev.aurelium:auraskills-api-bukkit:2.2.4")
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit") { isTransitive = false }
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")

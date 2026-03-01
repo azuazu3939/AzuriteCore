@@ -1,6 +1,6 @@
 package com.github.azuazu3939.azurite.command
 
-import io.lumine.mythic.bukkit.MythicBukkit
+import com.github.azuazu3939.azurite.Azurite
 import net.kyori.adventure.text.Component
 import org.bukkit.FluidCollisionMode
 import org.bukkit.Material
@@ -13,7 +13,7 @@ import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
 import kotlin.jvm.optionals.getOrNull
 
-class HopperCommand : CommandExecutor {
+class HopperCommand(private val plugin: Azurite) : CommandExecutor {
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         if (sender !is Player) return false
@@ -30,8 +30,8 @@ class HopperCommand : CommandExecutor {
             return false
         }
 
-        val mob = MythicBukkit.inst().mobManager.getMythicMob(args[0]).getOrNull()
-        val mmid = MythicBukkit.inst().itemManager.getItemStack(args[1], i)
+        val mob = plugin.mythic.mobManager.getMythicMob(args[0]).getOrNull()
+        val mmid = plugin.mythic.itemManager.getItemStack(args[1], i)
 
         if (mmid == null) {
             sender.sendMessage(Component.text("mmidがNullです。"))

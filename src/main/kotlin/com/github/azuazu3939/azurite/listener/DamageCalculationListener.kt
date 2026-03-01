@@ -1,73 +1,61 @@
 package com.github.azuazu3939.azurite.listener
 
-import com.github.azuazu3939.azurite.mythic.MythicTrigger
-import com.google.common.base.Function
+import com.github.azuazu3939.azurite.Azurite
+import io.lumine.mythic.api.skills.damage.DamageMetadata
+import io.lumine.mythic.bukkit.BukkitAdapter
 import io.lumine.mythic.bukkit.events.MythicDamageEvent
-import org.bukkit.damage.DamageSource
-import org.bukkit.damage.DamageType
 import org.bukkit.entity.Entity
 import org.bukkit.entity.LivingEntity
+import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageByEntityEvent
-import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.potion.PotionEffectType
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
-class DamageCalculationListener : Listener {
+class DamageCalculationListener(private val plugin: Azurite) : Listener {
 
-    @Suppress("DEPRECATION", "UnstableApiUsage")
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    fun onPlayerAttack(event: MythicDamageEvent) {
-        if (!event.caster.entity.isPlayer) return
-        if (event.target.isPlayer) return
-
-        val attacker = event.caster.entity
-        val victim = event.target
-        val zero = Function<Double, Double> { -0.0 }
-
-        val ev = EntityDamageByEntityEvent(attacker.bukkitEntity, victim.bukkitEntity,
-            EntityDamageEvent.DamageCause.ENTITY_ATTACK,
-            DamageSource.builder(DamageType.PLAYER_ATTACK)
-                .withDamageLocation(victim.bukkitEntity.location)
-                .withCausingEntity(attacker.bukkitEntity)
-                .withDirectEntity(victim.bukkitEntity)
-                .build(),
-            mutableMapOf<EntityDamageEvent.DamageModifier, Double>().apply {
-                put(EntityDamageEvent.DamageModifier.BASE, event.damage)
-            },
-            mutableMapOf<EntityDamageEvent.DamageModifier, Function<Double, Double>>().apply {
-                put(EntityDamageEvent.DamageModifier.BASE, zero)
-            },
-            false
-        )
-        ev.callEvent()
-        event.damage = ev.finalDamage
-    }
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    fun onAttack(event: MythicDamageEvent) {
-        val attacker = event.caster.entity
+    fun onCombat(event: EntityDamageByEntityEvent) {
+        if (event.damager !is Player) return
+
+        val victim = event.entity
+        if (victim is Player) return
+        if (victim !is LivingEntity) return
+
+        val damaged = BukkitAdapter.adapt(victim) ?: return
+        val op = damaged.getMetadata("skill-damage")
+        val meta = if (op.isPresent) op.get() else return
+
+        if (meta !is DamageMetadata) return
+        meta.putBoolean("melee", true)
+
+    }
+
+    @Suppress("DEPRECATION")
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    fun onCombat(event: MythicDamageEvent) {
         val victim = event.target
+        val attacker = event.caster.entity
 
         val base = event.damage
         val armor = victim.armor
         val toughness = victim.armorToughness
         val attack = attacker.damage
 
-        event.damage = calculation(base, attack, armor, toughness) / 2
-        MythicTrigger(event.caster).triggerAzu(victim)
+        val damage = calculation(base, attack, armor, toughness) * damageResistance(victim.bukkitEntity)
+
+        event.damage = damage
     }
 
-    companion object {
-        fun damageResistance(entity: Entity) : Double {
-            if (entity !is LivingEntity) return 1.0
-            if (!entity.hasPotionEffect(PotionEffectType.RESISTANCE)) return 1.0
-            var v = entity.getPotionEffect(PotionEffectType.RESISTANCE)?.amplifier?.plus(1)
-            if (v != null && v >= 5) v = 5
-            return 1 - (0.2 * v!!)
-        }
+    private fun damageResistance(entity: Entity): Double {
+        if (entity !is LivingEntity) return 1.0
+        if (!entity.hasPotionEffect(PotionEffectType.RESISTANCE)) return 1.0
+        var v = entity.getPotionEffect(PotionEffectType.RESISTANCE)?.amplifier?.plus(1)
+        if (v != null && v >= 5) v = 5
+        return 1 - (0.2 * v!!)
     }
 
     private fun calculation(value: Double, attack: Double, armor: Double, toughness: Double): Double {

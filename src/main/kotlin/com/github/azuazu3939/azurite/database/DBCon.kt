@@ -3,8 +3,6 @@ package com.github.azuazu3939.azurite.database
 import com.github.azuazu3939.azurite.Azurite
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.lumine.mythic.bukkit.MythicBukkit
-import org.bukkit.inventory.Inventory
 import org.bukkit.plugin.java.JavaPlugin
 import org.jetbrains.annotations.Contract
 import org.mariadb.jdbc.Driver
@@ -18,7 +16,6 @@ object DBCon {
 
     private val config = JavaPlugin.getPlugin(Azurite::class.java).config
     private const val FIRST_TABLE = "az_first"
-    private const val LOST_BOX_TABLE = "az_lost_box"
     private var dataSource: HikariDataSource?
     private val spawnSet: ConcurrentHashMap.KeySetView<UUID, Boolean> = ConcurrentHashMap.newKeySet()
 
@@ -60,45 +57,6 @@ object DBCon {
         })
     }
 
-    fun loadBox(uuid: UUID, box: Inventory): Inventory {
-        try {
-            var item = MythicBukkit.inst().itemManager.getItemStack("Azuriter_ロストアイテム_未開放")
-            for (ii in 0..53) {
-                box.setItem(ii, item)
-            }
-
-            runPrepareStatement("SELECT `lost_num`, `count` FROM $LOST_BOX_TABLE WHERE `uuid` = ?;".trimIndent()) {
-                it.setString(1, uuid.toString())
-                it.executeQuery().use { resultSet ->
-
-                    while (resultSet.next()) {
-                        val lostNum = resultSet.getInt("lost_num")
-                        item = MythicBukkit.inst().itemManager.getItemStack("Azuriter_ロストアイテム_$lostNum}", resultSet.getInt("count"))
-                        box.setItem(lostNum, item)
-                    }
-                }
-            }
-        } catch (ex: SQLException) {
-            throw ex
-        }
-        return box
-    }
-
-    fun addBox(uuid: UUID, slot: Int, amount: Int) {
-        Azurite.runAsync(runnable = {
-            try {
-                runPrepareStatement("INSERT INTO $LOST_BOX_TABLE (`uuid`, `lost_num`, `count`) VALUES (?,?,?) ON DUPLICATE KEY UPDATE `count` =?;".trimIndent()) {
-                    it.setString(1, uuid.toString())
-                    it.setInt(2, slot)
-                    it.setInt(3, amount)
-                    it.executeUpdate()
-                }
-            } catch (ex: SQLException) {
-                throw ex
-            }
-        })
-    }
-
     @Throws(SQLException::class)
     fun createTables() {
         runPrepareStatement(
@@ -110,15 +68,6 @@ object DBCon {
                 )
                 """.trimIndent(), PreparedStatement::execute
         )
-        runPrepareStatement(
-            """
-                CREATE TABLE IF NOT EXISTS `$LOST_BOX_TABLE` (
-                `uuid` varchar(36) NOT NULL,
-                `lost_num` tinyint,
-                `count` int,
-                PRIMARY KEY (`uuid`)
-                )
-        """.trimIndent(), PreparedStatement::execute)
     }
 
     fun close() {

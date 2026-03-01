@@ -1,124 +1,104 @@
 package com.github.azuazu3939.azurite.listener
 
 import com.github.azuazu3939.azurite.Azurite
-import com.github.azuazu3939.azurite.util.PluginDispatchers.runTask
+import com.github.azuazu3939.azurite.util.PacketUtil.displayMeta
+import com.github.azuazu3939.azurite.util.PacketUtil.removeEntity
+import com.github.azuazu3939.azurite.util.PacketUtil.spawnDisplay
 import io.lumine.mythic.api.adapters.AbstractEntity
-import io.lumine.mythic.bukkit.MythicBukkit
 import io.lumine.mythic.bukkit.events.MythicDamageEvent
 import io.lumine.mythic.core.mobs.ActiveMob
-import io.papermc.paper.adventure.PaperAdventure
 import net.kyori.adventure.text.Component
-import net.minecraft.network.protocol.Packet
-import net.minecraft.network.protocol.game.ClientboundAddEntityPacket
-import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket
-import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket
-import net.minecraft.network.syncher.EntityDataSerializers
-import net.minecraft.network.syncher.SynchedEntityData
 import net.minecraft.world.entity.EntityType
-import net.minecraft.world.phys.Vec3
-import org.bukkit.Location
-import org.bukkit.craftbukkit.entity.CraftPlayer
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
-import org.bukkit.plugin.java.JavaPlugin
-import java.text.NumberFormat
-import java.util.*
+import org.bukkit.util.Vector
+import java.text.DecimalFormat
+import java.util.concurrent.ThreadLocalRandom
 
-@Suppress("RedundantSuspendModifier")
-class DisplayListener(private val plugin : Azurite) : Listener {
+class DisplayListener(private val plugin: Azurite) : Listener {
+
+    companion object {
+        private const val DAMAGE_PREFIX = "§7§l⚔"
+        private val RANDOM = ThreadLocalRandom.current()
+        private val FORMAT = DecimalFormat("#.##")
+    }
+
+    private val elementPrefix: Map<String, String> = loadColorCache()
+
+    /* ===================================================== */
 
     @Suppress("DEPRECATION")
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    suspend fun onDisplay(event: MythicDamageEvent) {
+    fun onDisplay(event: MythicDamageEvent) {
+
         val attacker = event.caster.entity
+        if (!attacker.isPlayer) return
+
         val victim = event.target
-
         if (victim.isPlayer || !victim.isLiving) return
-        val mob = MythicBukkit.inst().mobManager.getActiveMob(victim.uniqueId).orElse(null)
-        if (mob != null && attacker.isPlayer) {
-            val d = event.damage * DamageCalculationListener.damageResistance(victim.bukkitEntity)
-            displayText(attacker.bukkitEntity as Player, victim, mob, event.damageMetadata.element, d)
+
+        val mob: ActiveMob = plugin.mythic.mobManager
+            .getActiveMob(victim.uniqueId)
+            .orElse(null) ?: return
+
+        val player = attacker.bukkitEntity as Player
+
+        val element = event.damageMetadata.element
+        val multi = mob.type.damageModifiers[element] ?: 1.0
+        val finalDamage = event.damage * multi
+
+        spawnDamageDisplay(
+            player,
+            victim,
+            element,
+            finalDamage
+        )
+    }
+
+    /* ===================================================== */
+
+    private fun spawnDamageDisplay(
+        player: Player,
+        victim: AbstractEntity,
+        element: String?,
+        damage: Double
+    ) {
+        val prefix = elementPrefix[element] ?: DAMAGE_PREFIX
+        val text = Component.text(prefix + FORMAT.format(damage))
+
+        val base = victim.bukkitEntity.location
+
+        val vec = Vector(
+            base.x + RANDOM.nextDouble(-1.0, 1.0),
+            base.y + RANDOM.nextDouble(2.1, 2.6),
+            base.z + RANDOM.nextDouble(-1.0, 1.0)
+        )
+
+        val id = RANDOM.nextInt(1, Int.MAX_VALUE)
+
+        player.spawnDisplay(EntityType.TEXT_DISPLAY, vec, id)
+        player.displayMeta(id, text)
+
+        // 30tick後削除（Coroutine無し）
+        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+            player.removeEntity(id)
+        }, 30L)
+    }
+
+    /* ===================================================== */
+
+    private fun loadColorCache(): Map<String, String> {
+        val section = plugin.config.getConfigurationSection("Colors") ?: return emptyMap()
+        val keys = section.getKeys(false)
+
+        val map = HashMap<String, String>(keys.size)
+        for (key in keys) {
+            val color = section.getString(key) ?: continue
+            map[key] = "$color§l⚔"
         }
-    }
-
-    private suspend fun displayText(player: Player, victim: AbstractEntity, mob: ActiveMob, element: String?, damage: Double) {
-        plugin.runTask {
-            async {
-                val multi = mob.type.damageModifiers.getOrDefault(element, 1.0)
-                val amount = formatDamage(damage * multi)
-                val loc = getNoise(victim.bukkitEntity.location)
-                val comp = Component.text(getElement(element) + amount)
-                val id = Random().nextInt(Int.MAX_VALUE)
-
-                spawnDisplay(player, loc.x, loc.y, loc.z, id)
-                displayMeta(player, id, comp)
-
-                delayTick(30)
-
-                removeDisplay(player, id)
-            }
-        }
-    }
-
-    private fun formatDamage(amount: Double): String {
-        val num = NumberFormat.getInstance()
-        num.maximumFractionDigits = 2
-        return num.format(amount).replace(",", "")
-    }
-
-    private fun getNoise(location: Location): Location {
-        val rand = Random()
-        return location.add(
-            rand.nextInt(5) * 0.5 - 1,
-            (rand.nextInt(5) + 1) * 0.1 + 2,
-            rand.nextInt(5) * 0.5 - 1)
-    }
-
-    private fun getColors(): Map<String, String> {
-        val yml = JavaPlugin.getPlugin(Azurite::class.java).config
-        if (yml.getConfigurationSection("Colors") == null) return mapOf()
-        return yml.getConfigurationSection("Colors")!!.getKeys(false).associateWith { yml.getString("Colors.$it")!! }
-    }
-
-    private fun getElement(element: String?): String {
-        if (element == null) return DAMAGE_PREFIX
-        return getColors()
-            .entries.stream()
-            .filter { element == it.key }.map { it.value }.findFirst().map {
-                it.let { it1 ->
-                    DAMAGE_PREFIX.replace("§7§l", it1)
-                }
-            }.orElse(DAMAGE_PREFIX)
-    }
-
-    private fun spawnDisplay(player: Player, x: Double, y: Double, z: Double, id: Int) {
-        val packet = ClientboundAddEntityPacket(id, UUID.randomUUID(), x, y, z, 0F, 0F, EntityType.TEXT_DISPLAY, id, Vec3.ZERO, 0.0)
-        send(player, packet)
-    }
-
-    private fun displayMeta(player: Player, id: Int, text: Component) {
-        val net = PaperAdventure.asVanilla(text)
-        val list = arrayListOf<SynchedEntityData.DataValue<*>>()
-
-        list.add(SynchedEntityData.DataValue.create(EntityDataSerializers.COMPONENT.createAccessor(23), net))
-        list.add(SynchedEntityData.DataValue.create(EntityDataSerializers.BYTE.createAccessor(15), 3.toByte()))
-        list.add(SynchedEntityData.DataValue.create(EntityDataSerializers.BYTE.createAccessor(26), 255.toByte()))
-        val packet = ClientboundSetEntityDataPacket(id, list)
-        send(player, packet)
-    }
-
-    private fun removeDisplay(player: Player, id: Int) {
-        val packet = ClientboundRemoveEntitiesPacket(id)
-        send(player, packet)
-    }
-
-    private fun send(player: Player, packet: Packet<*>) {
-        (player as CraftPlayer).handle.connection.send(packet)
-    }
-
-    companion object {
-        const val DAMAGE_PREFIX = "§7§l⚔"
+        return map
     }
 }

@@ -5,12 +5,11 @@ import com.github.azuazu3939.azurite.command.ModeCommand
 import com.github.azuazu3939.azurite.database.DBCon
 import com.github.azuazu3939.azurite.mythic.MythicTrigger
 import com.github.azuazu3939.azurite.util.PacketUtil
-import com.github.azuazu3939.azurite.util.PluginDispatchers.runTask
 import com.github.azuazu3939.azurite.util.Util
+import io.lumine.mythic.api.adapters.AbstractEntity
 import io.lumine.mythic.bukkit.BukkitAdapter
-import io.lumine.mythic.bukkit.MythicBukkit
 import io.lumine.mythic.bukkit.events.MythicHealMechanicEvent
-import org.bukkit.GameMode
+import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
@@ -25,135 +24,132 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityPickupItemEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.inventory.CraftItemEvent
-import org.bukkit.event.player.AsyncPlayerPreLoginEvent
-import org.bukkit.event.player.PlayerChangedWorldEvent
-import org.bukkit.event.player.PlayerDropItemEvent
-import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.*
 import org.bukkit.persistence.PersistentDataType
 
-@Suppress("RedundantSuspendModifier")
 class GenericRulesListener(private val plugin: Azurite) : Listener {
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    fun onCraft(event: CraftItemEvent) {
-        event.isCancelled = true
+    companion object {
+        private val DROP_KEY = NamespacedKey("az", "player_dropped")
+        private val STEP_KEY = NamespacedKey("az", "default-step-height")
+        private const val FIRST_SPAWN_SKILL = "Azuriter_FirstSpawn_1"
     }
 
+    /* ------------------------------------------------ */
+    /* Craft Block */
+    /* ------------------------------------------------ */
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    fun onCraft(event: CrafterCraftEvent) {
-        event.isCancelled = true
-    }
+    fun onCraft(event: CraftItemEvent) { event.isCancelled = true }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    fun onCraft(event: CrafterCraftEvent) { event.isCancelled = true }
+
+    /* ------------------------------------------------ */
+    /* Login / Join */
+    /* ------------------------------------------------ */
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onPreJoin(event: AsyncPlayerPreLoginEvent) {
         DBCon.loadSpawn(event.uniqueId)
-        if (MythicListener.isMythicReloading || MythicListener.isReloading) {
+
+        if (MythicListener.RELOADING || MythicListener.QUEUE) {
             event.loginResult = AsyncPlayerPreLoginEvent.Result.KICK_OTHER
         }
     }
 
+    @EventHandler
+    fun onJoin(event: PlayerJoinEvent) {
+        val player = event.player
+
+        PacketUtil.inject(player, plugin)
+
+        // 直接メインスレッド実行（余計なrunTask削除）
+        handleFirstJoin(player)
+        applyPlayerDefaults(player)
+
+        if (player.hasPermission("azurite.command.mode")) {
+            ModeCommand.switch(player, egod = false, efly = true, ebypass = false)
+        }
+    }
+
+    @EventHandler
+    fun onQuit(event: PlayerQuitEvent) {
+        PacketUtil.eject(event.player)
+    }
+
+    /* ------------------------------------------------ */
+    /* Item Drop / Pickup */
+    /* ------------------------------------------------ */
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onDrop(event: PlayerDropItemEvent) {
-        val i = event.itemDrop.itemStack
-        val p = event.player
-        val meta = i.itemMeta
-        if (i.hasItemMeta()) {
-            meta.persistentDataContainer.set(NamespacedKey("az", "player_dropped"), PersistentDataType.STRING, p.uniqueId.toString())
-            i.setItemMeta(meta)
-            event.itemDrop.itemStack = i
-        }
+        val meta = event.itemDrop.itemStack.itemMeta ?: return
+        meta.persistentDataContainer.set(
+            DROP_KEY,
+            PersistentDataType.STRING,
+            event.player.uniqueId.toString()
+        )
+        event.itemDrop.itemStack.itemMeta = meta
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onPickup(event: EntityPickupItemEvent) {
-        val p = event.entity
-        if (p !is Player) return
-        val i = event.item.itemStack
-        val meta = i.itemMeta
-        if (!i.hasItemMeta()) return
+        val player = event.entity as? Player ?: return
+        val stack = event.item.itemStack
+        val meta = stack.itemMeta ?: return
+        val container = meta.persistentDataContainer
 
-        if (meta.persistentDataContainer.has(NamespacedKey("az", "player_dropped"), PersistentDataType.STRING)) {
-            val u = meta.persistentDataContainer.get(NamespacedKey("az", "player_dropped"), PersistentDataType.STRING)
-            u?.let {
-                if (p.uniqueId.toString() != it) {
-                    event.isCancelled = true
-                    return
-                }
-            }
+        val owner = container.get(DROP_KEY, PersistentDataType.STRING) ?: return
+        if (owner != player.uniqueId.toString()) {
+            event.isCancelled = true
+            return
         }
-        meta.persistentDataContainer.remove(NamespacedKey("az", "player_dropped"))
-        i.setItemMeta(meta)
-        event.item.itemStack = i
 
+        container.remove(DROP_KEY)
+        stack.itemMeta = meta
     }
 
-    @EventHandler
-    suspend fun onJoin(event: PlayerJoinEvent) {
-        val player = event.player
-        plugin.runTask {
-            delayTick(30)
-            sync {
-
-                PacketUtil.inject(player)
-
-                Util.removeAttribute(player, Attribute.STEP_HEIGHT, NamespacedKey("az", "default-step-height"))
-                setStep(player)
-                setWayPoint(player)
-                player.updateInventory()
-                player.gameMode = GameMode.ADVENTURE
-            }
-            if (player.hasPermission("azurite.command.mode")) {
-                ModeCommand.switch(player, egod = false, efly = true, ebypass = false)
-            }
-            async {
-                if (!DBCon.hasSpawn(player.uniqueId)) {
-                    DBCon.loadSpawn(player.uniqueId)
-                }
-            }
-            delayTick(5)
-            val has =  async {
-                if (!DBCon.hasSpawn(player.uniqueId)) {
-                    DBCon.setSpawn(player.uniqueId)
-                    true
-                } else {
-                    false
-                }
-            }
-            if (has) {
-                MythicBukkit.inst().apiHelper.castSkill(player, "Azuriter_FirstSpawn_1")
-            }
-        }
-    }
+    /* ------------------------------------------------ */
+    /* World Change */
+    /* ------------------------------------------------ */
 
     @EventHandler
     fun onWorldChange(event: PlayerChangedWorldEvent) {
-        val player = event.player
-        Util.removeAttribute(player, Attribute.STEP_HEIGHT, NamespacedKey("az", "default-step-height"))
-        setStep(player)
-        setWayPoint(player)
+        applyPlayerDefaults(event.player)
+    }
+
+    /* ------------------------------------------------ */
+    /* Heal Trigger */
+    /* ------------------------------------------------ */
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onMythicHeal(event: MythicHealMechanicEvent) {
+        triggerHeal(BukkitAdapter.adapt(event.target))
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    fun onHeal(event: MythicHealMechanicEvent) {
-        val entity = BukkitAdapter.adapt(event.target)
-        if (MythicListener.isMythicReloading) return
-        MythicTrigger(MythicBukkit.inst().skillManager.getCaster(entity)).triggerHeal()
+    fun onVanillaHeal(event: EntityRegainHealthEvent) {
+        val player = event.entity as? Player ?: return
+        triggerHeal(BukkitAdapter.adapt(player))
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    fun onHeal(event: EntityRegainHealthEvent) {
-        if (event.entity !is Player) return
-        val entity = BukkitAdapter.adapt(event.entity)
-        if (MythicListener.isMythicReloading) return
-        MythicTrigger(MythicBukkit.inst().skillManager.getCaster(entity)).triggerHeal()
+    private fun triggerHeal(entity: AbstractEntity) {
+        if (MythicListener.RELOADING) return
+
+        val caster = plugin.mythic.skillManager.getCaster(entity)
+        MythicTrigger(caster).triggerHeal()
     }
 
-    @EventHandler
+    /* ------------------------------------------------ */
+    /* Combat / Spawn Rules */
+    /* ------------------------------------------------ */
+
+    @EventHandler(ignoreCancelled = true)
     fun onArrow(event: EntityDamageByEntityEvent) {
-        if (event.entity !is Player) return
-        if (event.damager !is Arrow) return
-        event.isCancelled = true
+        if (event.entity is Player && event.damager is Arrow) {
+            event.isCancelled = true
+        }
     }
 
     @EventHandler
@@ -163,17 +159,38 @@ class GenericRulesListener(private val plugin: Azurite) : Listener {
         }
     }
 
-    private fun setStep(player: Player?) {
-        if (player == null) return
+    /* ------------------------------------------------ */
+    /* Player Defaults */
+    /* ------------------------------------------------ */
+
+    private fun handleFirstJoin(player: Player) {
+        if (DBCon.hasSpawn(player.uniqueId)) return
+
+        DBCon.setSpawn(player.uniqueId)
+        Bukkit.dispatchCommand(
+            Bukkit.getConsoleSender(),
+            "spawn ${player.name}"
+        )
+
+        // 20秒後スキル実行（Coroutine削除）
+        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+            plugin.mythic.apiHelper.castSkill(player, FIRST_SPAWN_SKILL)
+        }, 20L * 20)
+    }
+
+    private fun applyPlayerDefaults(player: Player) {
+        Util.removeAttribute(player, Attribute.STEP_HEIGHT, STEP_KEY)
+
         Util.addAttribute(
             player,
             Attribute.STEP_HEIGHT,
-            AttributeModifier(NamespacedKey("az", "default-step-height"), 0.5, AttributeModifier.Operation.ADD_NUMBER)
+            AttributeModifier(
+                STEP_KEY,
+                0.5,
+                AttributeModifier.Operation.ADD_NUMBER
+            )
         )
-    }
 
-    private fun setWayPoint(player: Player?) {
-        if (player == null) return
         player.getAttribute(Attribute.WAYPOINT_TRANSMIT_RANGE)?.baseValue = 0.0
     }
 }

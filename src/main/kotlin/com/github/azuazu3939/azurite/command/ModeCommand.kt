@@ -23,29 +23,21 @@ class ModeCommand : TabExecutor {
     }
 
     private fun switch(player: Player, bypass: Boolean) {
-        var mode = ""
-        mode += if (bypass) {
-            "enable"
+         if (bypass) {
+             player.performCommand("god")
+             player.performCommand("fly on")
+             player.performCommand("rg bypass on")
         } else {
-            "disable"
+             player.performCommand("ungod")
+             player.performCommand("fly off")
+             player.performCommand("rg bypass off")
         }
-        player.performCommand("god $mode")
-        player.performCommand("fly $mode")
-
-        var m = ""
-        m += if (bypass) {
-            "on"
-        } else {
-            "off"
-        }
-        player.performCommand("rg bypass $m")
         player.sendMessage(Component.text("§f§l運営モード §b§l$bypass§f§lに切り替えました。"))
     }
 
     private fun switch(player: Player) {
         player.performCommand("rg bypass")
         player.performCommand("fly " + player.name)
-        player.performCommand("god " + player.name)
         player.sendMessage(Component.text("§f§l運営モードを切り替えました。"))
     }
 
@@ -61,17 +53,17 @@ class ModeCommand : TabExecutor {
         fun switch(player: Player, egod: Boolean, efly: Boolean, ebypass: Boolean) {
             var god = ""
             god += if (egod) {
-                "enable"
+                "god"
             } else {
-                "disable"
+                "ungod"
             }
-            player.performCommand("god $god")
+            player.performCommand(god)
 
             var fly = ""
             fly += if (efly) {
-                "enable"
+                "on"
             } else {
-                "disable"
+                "off"
             }
             player.performCommand("fly $fly")
 

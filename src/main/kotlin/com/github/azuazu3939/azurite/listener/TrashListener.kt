@@ -2,7 +2,6 @@ package com.github.azuazu3939.azurite.listener
 
 import com.github.azuazu3939.azurite.Azurite
 import com.github.azuazu3939.azurite.TrashInventory
-import io.lumine.mythic.bukkit.MythicBukkit
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -18,7 +17,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
 
-class TrashListener : Listener {
+class TrashListener(private val plugin: Azurite) : Listener {
 
     @EventHandler
     fun onClick(event: InventoryClickEvent) {
@@ -64,7 +63,7 @@ class TrashListener : Listener {
             for (item in inv.contents) {
                 if (item == null) continue
                 if (item.itemMeta.persistentDataContainer.has(NamespacedKey("az", "trash"))) continue
-                val mmid = MythicBukkit.inst().itemManager.getMythicTypeFromItem(item)
+                val mmid = plugin.mythic.itemManager.getMythicTypeFromItem(item)
                 if (mmid != null) {
                     logger.info(
                         player.name + "がアイテムを捨てました。 mmid : " + mmid + " ×" + item.amount

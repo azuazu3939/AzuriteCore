@@ -1,7 +1,6 @@
 package com.github.azuazu3939.azurite.listener
 
 import com.github.azuazu3939.azurite.Azurite
-import io.lumine.mythic.bukkit.MythicBukkit
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.NamespacedKey
@@ -13,7 +12,7 @@ import org.bukkit.event.inventory.InventoryPickupItemEvent
 import org.bukkit.persistence.PersistentDataType
 import java.util.*
 
-class SummonListener : Listener {
+class SummonListener(private val plugin: Azurite) : Listener {
 
     companion object {
         private val bossHopper = hashMapOf<Location, UUID>()
@@ -37,7 +36,7 @@ class SummonListener : Listener {
         }
 
         val stack = event.item.itemStack
-        val mythicItemId = MythicBukkit.inst().itemManager.getMythicTypeFromItem(stack)
+        val mythicItemId = plugin.mythic.itemManager.getMythicTypeFromItem(stack)
             ?: run {
                 event.isCancelled = true
                 return
@@ -53,7 +52,7 @@ class SummonListener : Listener {
         }
 
         // MythicMob が存在しない場合
-        val mobOpt = MythicBukkit.inst().mobManager.getMythicMob(mobId)
+        val mobOpt = plugin.mythic.mobManager.getMythicMob(mobId)
         if (mobOpt.isEmpty) {
             event.isCancelled = true
             return
@@ -76,13 +75,13 @@ class SummonListener : Listener {
         // Hopper内の合計を直接計算（同じ Material のみ）
         val totalAmount = hopper.inventory
             .filterNotNull()
-            .filter { expectedItemId == MythicBukkit.inst().itemManager.getMythicTypeFromItem(it) }
+            .filter { expectedItemId == plugin.mythic.itemManager.getMythicTypeFromItem(it) }
             .sumOf { it.amount }
             .plus(stack.amount)
 
         if (totalAmount >= requiredAmount &&
-            !MythicListener.isReloading &&
-            !MythicListener.isMythicReloading
+            !MythicListener.QUEUE &&
+            !MythicListener.RELOADING
         ) {
             eventNow.add(hopper.location)
             hopper.inventory.clear()
@@ -103,7 +102,7 @@ class SummonListener : Listener {
             }, 15)
 
             Azurite.runLater({
-                val bossId = MythicBukkit.inst().apiHelper.spawnMythicMob(
+                val bossId = plugin.mythic.apiHelper.spawnMythicMob(
                     mobId,
                     hopper.location.add(0.0, 1.0, 0.0)
                 ).uniqueId
@@ -119,7 +118,7 @@ class SummonListener : Listener {
             val player = uuidStr?.let { Bukkit.getPlayer(UUID.fromString(it)) } ?: return
 
             repeat(stack.amount) {
-                MythicBukkit.inst().apiHelper.castSkill(player, "${mobId}_SpawnDrop")
+                plugin.mythic.apiHelper.castSkill(player, "${mobId}_SpawnDrop")
             }
 
             stack.itemMeta = stack.itemMeta.apply {

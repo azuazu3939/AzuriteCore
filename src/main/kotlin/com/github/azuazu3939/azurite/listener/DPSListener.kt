@@ -16,7 +16,7 @@ class DPSListener : Listener {
         val p = event.caster.entity
         if (!p.isPlayer) return
         if (!DPS.isOn(p.uniqueId)) return
-        val d = event.damage * DamageCalculationListener.damageResistance(event.target.bukkitEntity)
+        val d = event.damage
         DPS.add(p.uniqueId, event.target.uniqueId, d)
         DPS.show(BukkitAdapter.adapt(p) as Player, DPS.getDamage(p.uniqueId, event.target.uniqueId))
     }

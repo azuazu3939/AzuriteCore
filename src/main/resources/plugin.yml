@@ -6,7 +6,6 @@ authors: [ MCLove32 ]
 
 depend:
   - MythicMobs
-  - AuraSkills
 
 commands:
   worldset:
@@ -39,11 +38,8 @@ commands:
     permission: azurite.command.flyspeed
     aliases:
       - fs
-  lostbox:
-    permission: azurite.command.lostbox
-    aliases:
-      - lost
-      - lb
+  lock:
+    permission: azurite.command.lock
 
 permissions:
   azurite.*:
@@ -65,7 +61,7 @@ permissions:
       azurite.command.fly: true
       azurite.command.gm: true
       azurite.command.flyspeed: true
-      azurite.command.lostbox: true
+      azurite.command.lock: true
   azurite.reload.mythicmobs:
     default: op
   azurite.command.mode:
@@ -90,5 +86,5 @@ permissions:
       default: op
   azurite.command.flyspeed:
     default: op
-  azurite.command.lostbox:
+  azurite.command.lock:
      default: true

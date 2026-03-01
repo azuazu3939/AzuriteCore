@@ -27,7 +27,7 @@ class CombatLogListener : Listener {
 
         val attacker = event.caster.entity.bukkitEntity as Player
         val victim = event.target.bukkitEntity
-        message(attacker, "ミシック", event.damage * DamageCalculationListener.damageResistance(victim), true, victim)
+        message(attacker, "ミシック", event.damage, true, victim)
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -37,7 +37,7 @@ class CombatLogListener : Listener {
         if (!combatLog.contains(event.target.uniqueId)) return
 
         val victim = event.target.bukkitEntity as Player
-        message(victim, "ミシック", event.damage * DamageCalculationListener.damageResistance(victim), false, event.caster.entity.bukkitEntity)
+        message(victim, "ミシック", event.damage, false, event.caster.entity.bukkitEntity)
     }
 
     private fun message(p: Player, type: String, damage: Double, send: Boolean) {
